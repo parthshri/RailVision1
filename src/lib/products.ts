@@ -28,6 +28,27 @@ export const products: Product[] = [
       "Parent and educator friendly guide"
     ]
   },
+
+  {
+    id: "object-detection-train",
+    name: "Object Detection Train",
+    slug: "object-detection-train",
+    price: 1499,
+    imageUrl: "/object-detection-train.png",
+    status: "available",
+    badge: "Smart Safety Kit",
+    summary:
+      "An intelligent railway model that detects another train or obstacle ahead and automatically stops to prevent collisions.",
+    features: [
+      "Automatic object detection",
+      "Collision prevention system",
+      "Infrared sensor technology",
+      "Arduino Nano powered",
+      "Automatic stop & restart",
+      "Perfect STEM learning project"
+    ]
+  },
+
   {
     id: "railvision-pro",
     name: "RailVision Pro",
@@ -55,5 +76,7 @@ export function formatCurrency(value: number) {
 }
 
 export function getProduct(id: string) {
-  return products.find((product) => product.id === id || product.slug === id);
+  return products.find(
+    (product) => product.id === id || product.slug === id
+  );
 }
