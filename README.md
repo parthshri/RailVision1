@@ -1,5 +1,7 @@
 # RailVision
-
+git add .
+git commit -m "updated features"
+git push
 Full-stack RailVision website built with Next.js, Firebase Authentication, Firestore,
 Firebase Storage, and Razorpay.
 

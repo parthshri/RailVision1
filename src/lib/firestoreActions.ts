@@ -4,6 +4,8 @@ import {
   addDoc,
   collection,
   serverTimestamp,
+  doc,
+  updateDoc,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -113,4 +115,42 @@ export async function createOrder(
         serverTimestamp(),
     }
   );
+
+}
+  // ===============================
+// UPDATE ORDER STATUS
+// ===============================
+
+    export async function updateOrderStatus(
+      orderId: string,
+      status:
+        | "PLACED"
+        | "PROCESSING"
+        | "SHIPPED"
+        | "DELIVERED"
+        | "CANCELLED"
+    ) {
+
+      if (!db) {
+        throw new Error(
+          "Firebase is not configured yet."
+        );
+      }
+
+
+      const orderRef = doc(
+        db,
+        "orders",
+        orderId
+      );
+
+
+      return updateDoc(
+        orderRef,
+        {
+          orderStatus: status,
+          updatedAt: serverTimestamp(),
+        }
+      );
+    
 }
