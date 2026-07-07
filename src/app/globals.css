@@ -1136,6 +1136,102 @@ select:focus {
     align-self: end;
   }
 }
+/* ===========================
+   Checkout Progress
+=========================== */
+
+.checkout-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 32px 0 40px;
+  width: 100%;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.progress-circle {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  flex-shrink: 0;
+
+  border: 1px solid var(--line);
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.04);
+  color: var(--muted);
+
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
+}
+
+.progress-step span {
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
+
+.progress-step.active {
+  color: var(--text);
+}
+
+
+.progress-step.active .progress-circle {
+  background: linear-gradient(
+    135deg,
+    var(--cyan),
+    var(--green)
+  );
+
+  border-color: transparent;
+  color: #021016;
+
+  box-shadow:
+    0 0 25px rgba(85,230,255,0.25);
+}
+
+
+.progress-line {
+  height: 2px;
+  flex: 1;
+
+  margin: 0 18px;
+
+  background: var(--line);
+}
+
+
+/* Mobile Checkout Progress */
+
+@media(max-width:760px){
+
+  .checkout-progress {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .progress-step {
+    flex:none;
+  }
+
+  .progress-line {
+    display:none;
+  }
+
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

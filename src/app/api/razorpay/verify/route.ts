@@ -3,24 +3,90 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-      await request.json();
+    const body = await request.json();
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    if (!keySecret) {
-      return NextResponse.json({ error: "Razorpay secret is not configured" }, { status: 500 });
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = body;
+
+
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
+      return NextResponse.json(
+        {
+          verified: false,
+          message: "Missing payment details",
+        },
+        {
+          status: 400,
+        }
+      );
     }
 
-    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const expected = crypto.createHmac("sha256", keySecret).update(body).digest("hex");
 
-    if (expected !== razorpay_signature) {
-      return NextResponse.json({ verified: false }, { status: 400 });
+    const secret =
+      process.env.RAZORPAY_KEY_SECRET;
+
+
+    if (!secret) {
+      return NextResponse.json(
+        {
+          verified:false,
+          message:"Secret missing"
+        },
+        {
+          status:500
+        }
+      );
     }
 
-    return NextResponse.json({ verified: true });
-  } catch (error) {
+
+    const generatedSignature =
+      crypto
+        .createHmac(
+          "sha256",
+          secret
+        )
+        .update(
+          `${razorpay_order_id}|${razorpay_payment_id}`
+        )
+        .digest("hex");
+
+
+    const verified =
+      generatedSignature === razorpay_signature;
+
+
+    console.log({
+      generatedSignature,
+      razorpay_signature,
+      verified
+    });
+
+
+    return NextResponse.json({
+      verified,
+    });
+
+
+  } catch(error){
+
     console.error(error);
-    return NextResponse.json({ error: "Could not verify payment" }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        verified:false,
+        message:"Verification error"
+      },
+      {
+        status:500
+      }
+    );
+
   }
 }
