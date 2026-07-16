@@ -2,23 +2,14 @@
 
 import {
   collection,
-  doc,
   onSnapshot,
   orderBy,
   query,
-  setDoc,
 } from "firebase/firestore";
-
-import {
-  getDownloadURL,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
 
 import Link from "next/link";
 
 import {
-  FormEvent,
   useEffect,
   useMemo,
   useState,
@@ -28,7 +19,6 @@ import toast from "react-hot-toast";
 
 import {
   BarChart3,
-  ImageUp,
   Mail,
   Package,
   UsersRound,
@@ -36,16 +26,12 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { formatCurrency } from "@/lib/products";
 
 import {
-  formatCurrency,
-  products,
-} from "@/lib/products";
-
-import {
-  PaymentStatus,
   OrderStatus,
+  PaymentStatus,
   updateOrderPaymentStatus,
   updateOrderStatus,
 } from "@/lib/firestoreActions";
@@ -117,10 +103,6 @@ export default function AdminPage() {
   const [selectedOrder, setSelectedOrder] =
     useState<AdminOrder | null>(null);
 
-  const [uploading, setUploading] =
-    useState(false);
-  const [uploadProgress, setUploadProgress] =
-  useState(0);
   const [
     updatingOrderStatusId,
     setUpdatingOrderStatusId,
@@ -158,6 +140,7 @@ export default function AdminPage() {
             "Failed to load orders:",
             error
           );
+
           toast.error(
             "Could not load orders."
           );
@@ -178,6 +161,12 @@ export default function AdminPage() {
               })
             )
           );
+        },
+        (error) => {
+          console.error(
+            "Failed to load contacts:",
+            error
+          );
         }
       ),
 
@@ -195,6 +184,12 @@ export default function AdminPage() {
               })
             )
           );
+        },
+        (error) => {
+          console.error(
+            "Failed to load inquiries:",
+            error
+          );
         }
       ),
 
@@ -208,6 +203,12 @@ export default function AdminPage() {
                 ...document.data(),
               })
             )
+          );
+        },
+        (error) => {
+          console.error(
+            "Failed to load users:",
+            error
           );
         }
       ),
@@ -290,174 +291,6 @@ export default function AdminPage() {
     }
   }
 
- async function uploadImage(
-  event: FormEvent<HTMLFormElement>
-) {
-  event.preventDefault();
-
-  const formElement = event.currentTarget;
-  const form = new FormData(formElement);
-
-  const productId = String(
-    form.get("productId") || ""
-  );
-
-  const file = form.get("image");
-
-  if (!productId) {
-    toast.error("Select a product.");
-    return;
-  }
-
-  if (!(file instanceof File) || file.size === 0) {
-    toast.error("Choose an image first.");
-    return;
-  }
-
-  if (!file.type.startsWith("image/")) {
-    toast.error("Only image files are allowed.");
-    return;
-  }
-
-  const maximumSize = 5 * 1024 * 1024;
-
-  if (file.size > maximumSize) {
-    toast.error(
-      "The image must be smaller than 5 MB."
-    );
-    return;
-  }
-
-  if (!db || !storage) {
-    toast.error(
-      "Firebase Storage is not configured."
-    );
-    return;
-  }
-
-  setUploading(true);
-  setUploadProgress(0);
-
-  try {
-    const safeFileName = file.name.replace(
-      /[^a-zA-Z0-9._-]/g,
-      "_"
-    );
-
-    const imageReference = ref(
-      storage,
-      `product-images/${productId}/${Date.now()}-${safeFileName}`
-    );
-
-    const uploadTask = uploadBytesResumable(
-      imageReference,
-      file,
-      {
-        contentType: file.type,
-        customMetadata: {
-          productId,
-        },
-      }
-    );
-
-    const snapshot = await new Promise<
-      Awaited<ReturnType<typeof uploadTask.then>>
-    >((resolve, reject) => {
-      uploadTask.on(
-        "state_changed",
-
-        (currentSnapshot) => {
-          const progress =
-            (currentSnapshot.bytesTransferred /
-              currentSnapshot.totalBytes) *
-            100;
-
-          setUploadProgress(
-            Math.round(progress)
-          );
-        },
-
-        (error) => {
-          reject(error);
-        },
-
-        () => {
-          resolve(uploadTask.snapshot);
-        }
-      );
-    });
-
-    const imageUrl = await getDownloadURL(
-      snapshot.ref
-    );
-
-    await setDoc(
-      doc(db, "products", productId),
-      {
-        imageUrl,
-        imagePath: snapshot.ref.fullPath,
-        updatedAt: new Date(),
-      },
-      {
-        merge: true,
-      }
-    );
-
-    formElement.reset();
-    setUploadProgress(100);
-
-    toast.success(
-      "Product image updated successfully."
-    );
-  } catch (error: unknown) {
-    console.error(
-      "Product image upload failed:",
-      error
-    );
-
-    const errorCode =
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error
-        ? String(error.code)
-        : "";
-
-    if (
-      errorCode ===
-      "storage/unauthorized"
-    ) {
-      toast.error(
-        "Firebase Storage denied the upload. Check your Storage security rules."
-      );
-    } else if (
-      errorCode ===
-      "storage/bucket-not-found"
-    ) {
-      toast.error(
-        "Firebase Storage bucket was not found. Check NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET."
-      );
-    } else if (
-      errorCode ===
-      "storage/canceled"
-    ) {
-      toast.error("Upload was cancelled.");
-    } else if (
-      errorCode ===
-      "storage/retry-limit-exceeded"
-    ) {
-      toast.error(
-        "Upload timed out. Check your internet connection and try again."
-      );
-    } else {
-      toast.error(
-        "Image upload failed. Check the browser console for the exact Firebase error."
-      );
-    }
-  } finally {
-    setUploading(false);
-  }
-}
-
   if (loading) {
     return (
       <section className="auth-screen">
@@ -503,8 +336,8 @@ export default function AdminPage() {
         </h1>
 
         <p>
-          Manage products, customers, orders,
-          payment verification, and delivery
+          Manage orders, payment verification,
+          customers, inquiries, and delivery
           status.
         </p>
       </section>
@@ -537,72 +370,10 @@ export default function AdminPage() {
             key={metric.label}
           >
             <metric.icon size={28} />
-
             <span>{metric.value}</span>
-
             <p>{metric.label}</p>
           </div>
         ))}
-      </section>
-
-      <section className="section split">
-        <div>
-          <span className="eyebrow">
-            Manage products
-          </span>
-
-          <h2>
-            Upload replaceable product images.
-          </h2>
-
-          <p>
-            Images are stored in Firebase
-            Storage and linked to the relevant
-            product document.
-          </p>
-        </div>
-
-        <form
-          className="panel form-grid single"
-          onSubmit={uploadImage}
-        >
-          <label>
-            Product
-
-            <select name="productId">
-              {products.map((product) => (
-                <option
-                  key={product.id}
-                  value={product.id}
-                >
-                  {product.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Product image
-
-            <input
-              required
-              type="file"
-              name="image"
-              accept="image/*"
-            />
-          </label>
-
-          <button
-            className="button primary"
-            disabled={uploading}
-          >
-            <ImageUp size={18} />
-
-            {uploading
-              ? "Uploading..."
-              : "Upload Image"}
-          </button>
-        </form>
       </section>
 
       <section className="section admin-tables">
@@ -707,11 +478,11 @@ function OrderAdminList({
       ) : null}
 
       {orders.map((order) => {
-        const updatingOrderStatus =
+        const orderUpdating =
           updatingOrderStatusId ===
           order.id;
 
-        const updatingPaymentStatus =
+        const paymentUpdating =
           updatingPaymentStatusId ===
           order.id;
 
@@ -780,9 +551,7 @@ function OrderAdminList({
                   order.orderStatus ||
                   "PLACED"
                 }
-                disabled={
-                  updatingOrderStatus
-                }
+                disabled={orderUpdating}
                 onClick={(event) =>
                   event.stopPropagation()
                 }
@@ -828,9 +597,7 @@ function OrderAdminList({
                   order.paymentStatus ||
                   "PENDING"
                 }
-                disabled={
-                  updatingPaymentStatus
-                }
+                disabled={paymentUpdating}
                 onClick={(event) =>
                   event.stopPropagation()
                 }
@@ -860,8 +627,8 @@ function OrderAdminList({
               </select>
             </label>
 
-            {updatingOrderStatus ||
-            updatingPaymentStatus ? (
+            {orderUpdating ||
+            paymentUpdating ? (
               <small
                 style={{
                   color: "var(--muted)",
