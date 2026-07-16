@@ -1,13 +1,9 @@
-import { Product } from "./products";
-
-
 export type OrderItem = {
   productId: string;
   name: string;
   quantity: number;
   price: number;
 };
-
 
 export type Order = {
   id?: string;
@@ -21,7 +17,6 @@ export type Order = {
     alternatePhone: string;
   };
 
-
   shippingAddress: {
     house: string;
     street: string;
@@ -32,22 +27,19 @@ export type Order = {
     country: string;
   };
 
-
   products: OrderItem[];
 
   total: number;
 
-
   paymentMethod:
-    | "ONLINE"
-    | "COD";
-
+    | "COD"
+    | "UPI_MANUAL";
 
   paymentStatus:
     | "PENDING"
+    | "AWAITING_VERIFICATION"
     | "PAID"
     | "FAILED";
-
 
   orderStatus:
     | "PLACED"
@@ -56,6 +48,8 @@ export type Order = {
     | "DELIVERED"
     | "CANCELLED";
 
+  transactionReference?: string;
 
   createdAt?: unknown;
+  updatedAt?: unknown;
 };

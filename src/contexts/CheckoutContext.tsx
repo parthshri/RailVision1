@@ -24,8 +24,10 @@ export type ShippingAddress = {
   pinCode: string;
   country: string;
 };
-
-export type PaymentMethod = "ONLINE" | "COD" | "";
+export type PaymentMethod =
+  | "COD"
+  | "UPI_MANUAL"
+  | "";
 
 type CheckoutContextValue = {
   customerInfo: CustomerInfo;

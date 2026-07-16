@@ -72,7 +72,7 @@ async function submit(event: FormEvent<HTMLFormElement>) {
         <aside className="contact-card">
           <div>
             <Mail size={20} />
-            <span>railvisionsupport@gmail.com</span>
+            <span>parthshrivastavai09@gmail.com</span>
           </div>
           <div>
             <Phone size={20} />

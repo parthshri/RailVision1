@@ -114,13 +114,43 @@ export default function ShopPage() {
 
                 <p>{product.summary}</p>
 
-                <strong className="price">
-                  {product.status === "available"
-                    ? formatCurrency(
-                        product.price
-                      )
-                    : "Coming Soon"}
-                </strong>
+                {product.status === "available" ? (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+      margin: "18px 0",
+      textAlign: "center",
+    }}
+  >
+    <span
+      style={{
+        color: "var(--muted)",
+        fontSize: "1rem",
+        textDecoration: "line-through",
+      }}
+    >
+      {formatCurrency(product.price + 200)}
+    </span>
+
+    <strong
+      style={{
+        color: "var(--green)",
+        fontSize: "1.65rem",
+        fontWeight: 900,
+      }}
+    >
+      {formatCurrency(product.price)}
+    </strong>
+  </div>
+) : (
+  <strong className="price">
+    Coming Soon
+  </strong>
+)}
 
                 <button
                   type="button"

@@ -3,29 +3,37 @@
 import {
   addDoc,
   collection,
-  serverTimestamp,
   doc,
+  serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 import { Order } from "@/lib/orders";
 
-
 type PlainObject = Record<string, unknown>;
 
+export type OrderStatus =
+  | "PLACED"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED";
 
+export type PaymentStatus =
+  | "PENDING"
+  | "AWAITING_VERIFICATION"
+  | "PAID"
+  | "FAILED";
 
 export async function addContact(
   payload: PlainObject
 ) {
-
   if (!db) {
     throw new Error(
       "Firebase is not configured yet."
     );
   }
-
 
   return addDoc(
     collection(db, "contacts"),
@@ -37,20 +45,14 @@ export async function addContact(
   );
 }
 
-
-
-
-
 export async function addProInquiry(
   payload: PlainObject
 ) {
-
   if (!db) {
     throw new Error(
       "Firebase is not configured yet."
     );
   }
-
 
   return addDoc(
     collection(db, "proInquiries"),
@@ -62,20 +64,14 @@ export async function addProInquiry(
   );
 }
 
-
-
-
-
 export async function addNotificationSignup(
   payload: PlainObject
 ) {
-
   if (!db) {
     throw new Error(
       "Firebase is not configured yet."
     );
   }
-
 
   return addDoc(
     collection(db, "notifications"),
@@ -86,71 +82,58 @@ export async function addNotificationSignup(
   );
 }
 
-
-
-
-
-// ===============================
-// ORDER CREATION
-// ===============================
-
-
 export async function createOrder(
   order: Order
 ) {
-
   if (!db) {
     throw new Error(
       "Firebase is not configured yet."
     );
   }
 
-
   return addDoc(
     collection(db, "orders"),
     {
       ...order,
-
-      createdAt:
-        serverTimestamp(),
+      createdAt: serverTimestamp(),
     }
   );
-
 }
-  // ===============================
-// UPDATE ORDER STATUS
-// ===============================
 
-    export async function updateOrderStatus(
-      orderId: string,
-      status:
-        | "PLACED"
-        | "PROCESSING"
-        | "SHIPPED"
-        | "DELIVERED"
-        | "CANCELLED"
-    ) {
+export async function updateOrderStatus(
+  orderId: string,
+  status: OrderStatus
+) {
+  if (!db) {
+    throw new Error(
+      "Firebase is not configured yet."
+    );
+  }
 
-      if (!db) {
-        throw new Error(
-          "Firebase is not configured yet."
-        );
-      }
+  return updateDoc(
+    doc(db, "orders", orderId),
+    {
+      orderStatus: status,
+      updatedAt: serverTimestamp(),
+    }
+  );
+}
 
+export async function updateOrderPaymentStatus(
+  orderId: string,
+  paymentStatus: PaymentStatus
+) {
+  if (!db) {
+    throw new Error(
+      "Firebase is not configured yet."
+    );
+  }
 
-      const orderRef = doc(
-        db,
-        "orders",
-        orderId
-      );
-
-
-      return updateDoc(
-        orderRef,
-        {
-          orderStatus: status,
-          updatedAt: serverTimestamp(),
-        }
-      );
-    
+  return updateDoc(
+    doc(db, "orders", orderId),
+    {
+      paymentStatus,
+      updatedAt: serverTimestamp(),
+    }
+  );
 }
