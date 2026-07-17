@@ -112,7 +112,63 @@ export const products: Product[] = [
       "Storage box"
     ]
   },
-
+  {
+  id: "railvision-science-explorer-kit",
+  name: "RailVision Science Explorer Kit",
+  slug: "railvision-science-explorer-kit",
+  price: 499,
+  imageUrl: "/railvision-science-explorer-kit.png",
+  status: "available",
+  badge: "Value Pack",
+  summary:
+    "An all-in-one beginner science project kit with motors, LEDs, switches, a solar panel, water pump and other essential components for creative school projects.",
+  description:
+    "The RailVision Science Explorer Kit is designed for students who want to build exciting working science models and understand the basics of electricity, renewable energy, motors and electronic circuits. With a wide variety of ready-to-use components, students can create solar-powered models, water pump projects, LED circuits, alarms, fans and many other school science exhibition projects.",
+  features: [
+    "Complete beginner-friendly science project kit",
+    "Solar panel for renewable energy experiments",
+    "Mini water pump with connecting pipe",
+    "Multiple DC motors and fan blades",
+    "Assorted coloured LEDs and resistors",
+    "Different switches for circuit control",
+    "Buzzer and high-brightness torch LED",
+    "Battery holders and power connectors included",
+    "Ideal for school science exhibitions",
+    "Suitable for students, beginners and young inventors",
+    "Build multiple reusable working models",
+    "Convenient reusable storage and packing box"
+  ],
+  materialsIncluded: [
+    "1 Mini Solar Panel",
+    "1 Mini Water Pump",
+    "1 Transparent Water Pipe Roll",
+    "1 Standard DC Motor",
+    "1 Mini Toy DC Motor",
+    "1 Pink Three-Blade Fan",
+    "1 Purple Fan Blade",
+    "2 AA Batteries",
+    "1 Two-Cell AA Battery Holder",
+    "1 9V Battery",
+    "1 9V Battery Connector Clip",
+    "Assorted Connecting Wires",
+    "5 Red LEDs",
+    "5 Green LEDs",
+    "5 Yellow LEDs",
+    "5 Blue LEDs",
+    "Assorted Multicolour LEDs",
+    "Assorted Resistors",
+    "3 Rocker Switches",
+    "1 Round Rocker Switch",
+    "1 Push Button Switch",
+    "1 Slide Switch",
+    "1 High-Brightness Torch LED Module",
+    "1 Electronic Buzzer",
+    "2 Wire Connectors",
+    "Assorted Screws, Nuts and Washers",
+    "1 Roll of Double-Sided Tape",
+    "1 Reusable Project Storage Box"
+  ]
+},
   {
     id: "railvision-traffic-signal-kit",
     name: "RailVision Traffic Signal Project Kit",
