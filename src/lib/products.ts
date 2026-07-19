@@ -47,7 +47,7 @@ export const products: Product[] = [
     id: "object-detection-train",
     name: "Object Detection Train",
     slug: "object-detection-train",
-    price: 1499,
+    price: 3499,
     imageUrl: "/object-detection-train.png",
     status: "available",
     badge: "Smart Safety Kit",
