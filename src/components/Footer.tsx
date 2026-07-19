@@ -20,6 +20,7 @@ export function Footer() {
         <Link href="/railvision-junior">RailVision Junior</Link>
         <Link href="/shop">Shop</Link>
         <Link href="/contact">Contact</Link>
+        <Link href="/refund-policy">Refund Policy</Link>
       </div>
         <div className="social-links">
           <a

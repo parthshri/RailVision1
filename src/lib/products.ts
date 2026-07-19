@@ -10,6 +10,7 @@ export type Product = {
   description: string;
   features: string[];
   materialsIncluded: string[];
+codAvailable: boolean;
 };
 
 export const products: Product[] = [
@@ -21,6 +22,7 @@ export const products: Product[] = [
     imageUrl: "/railvision-junior.png",
     status: "available",
     badge: "STEM Kit",
+    codAvailable: false,
     summary:
       "A hands-on railway innovation kit for children to learn engineering, AI thinking, sensors, safety, and systems design.",
     description:
@@ -51,6 +53,7 @@ export const products: Product[] = [
     imageUrl: "/object-detection-train.png",
     status: "available",
     badge: "Smart Safety Kit",
+    codAvailable: false,
     summary:
       "An intelligent railway model that detects another train or obstacle ahead and automatically stops to prevent collisions.",
     description:
@@ -83,6 +86,7 @@ export const products: Product[] = [
     imageUrl: "/railvision-inventor-kit.png",
     status: "available",
     badge: "Best Seller",
+    codAvailable: true,
     summary:
       "A beginner-friendly electronics learning kit packed with essential components for building exciting circuits and STEM projects.",
     description:
@@ -120,6 +124,7 @@ export const products: Product[] = [
   imageUrl: "/railvision-science-explorer-kit.png",
   status: "available",
   badge: "Value Pack",
+  codAvailable: true,
   summary:
     "An all-in-one beginner science project kit with motors, LEDs, switches, a solar panel, water pump and other essential components for creative school projects.",
   description:
@@ -177,6 +182,7 @@ export const products: Product[] = [
     imageUrl: "/railvision-traffic-signal-kit.png",
     status: "available",
     badge: "School Project",
+    codAvailable: true,
     summary:
       "A complete Arduino-based traffic signal project kit perfect for science exhibitions, STEM learning, and beginner programming.",
     description:
@@ -214,6 +220,7 @@ export const products: Product[] = [
     price: 0,
     status: "coming-soon",
     badge: "Coming Soon",
+    codAvailable: false,
     summary:
       "An AI-powered wireless railway health monitoring system that transforms trains into moving inspection units.",
     description:

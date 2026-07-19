@@ -1,6 +1,5 @@
 "use client";
-
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { QRCodeSVG } from "qrcode.react";
@@ -308,6 +307,12 @@ export default function PaymentStep({
 
               paymentMethod: "COD",
             });
+            if (paymentMethod === "COD" && !codAllowed) {
+  toast.error(
+    "Cash on Delivery is unavailable for this order."
+  );
+  return;
+}
 
       const successQuery =
         new URLSearchParams({
@@ -343,6 +348,16 @@ export default function PaymentStep({
       setPlacingOrder(false);
     }
   }
+  const codAllowed = useMemo(() => {
+  if (directProduct) {
+    return directProduct.codAvailable;
+  }
+
+  return cart.items.every((item) => {
+    const product = getProduct(item.productId);
+    return product?.codAvailable !== false;
+  });
+}, [cart.items, directProduct]);
 
   return (
     <div className="panel">
@@ -615,19 +630,52 @@ export default function PaymentStep({
         }}
       >
         <input
-          type="radio"
-          name="paymentMethod"
-          checked={
-            paymentMethod === "COD"
-          }
-          onChange={() =>
-            setPaymentMethod("COD")
+  type="radio"
+  name="paymentMethod"
+  checked={paymentMethod === "COD"}
+  disabled={!codAllowed}
+  onChange={() => {
+    if (codAllowed) {
+      setPaymentMethod("COD");
+    }
+  }
           }
           style={{
             width: 20,
             minHeight: 20,
           }}
         />
+        {!codAllowed ? (
+  <div
+    style={{
+      marginBottom: 16,
+      padding: 15,
+      border: "1px solid rgba(246,184,75,0.35)",
+      borderRadius: 8,
+      background: "rgba(246,184,75,0.07)",
+    }}
+  >
+    <strong
+      style={{
+        color: "var(--amber)",
+      }}
+    >
+      Cash on Delivery is unavailable for this order.
+    </strong>
+
+    <p
+      style={{
+        marginTop: 7,
+        marginBottom: 0,
+      }}
+    >
+      This order contains a high-value or made-to-order product.
+      Advance payment is required before purchasing raw materials
+      and preparing the product. Please contact RailVision Support
+      for more details.
+    </p>
+  </div>
+) : null}
 
         <span>
           <strong
@@ -977,4 +1025,10 @@ export default function PaymentStep({
       </div>
     </div>
   );
+
+  useEffect(() => {
+  if (!codAllowed && paymentMethod === "COD") {
+    setPaymentMethod("");
+  }
+}, [codAllowed, paymentMethod, setPaymentMethod]);
 }

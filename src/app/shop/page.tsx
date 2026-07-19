@@ -64,6 +64,24 @@ export default function ShopPage() {
 
   return (
     <>
+    <div
+  style={{
+    width: "100%",
+    background:
+      "linear-gradient(90deg,#ff7a18,#ffb347)",
+    color: "#fff",
+    textAlign: "center",
+    padding: "12px 20px",
+    fontWeight: 700,
+    fontSize: "15px",
+    letterSpacing: "0.4px",
+    boxShadow: "0 4px 15px rgba(0,0,0,.15)",
+  }}
+>
+  🎉 <strong>Launch Offer!</strong> Exclusive discounts for our
+  <strong> first 100 customers</strong>. Limited-time introductory
+  pricing — Order yours today!
+</div>
       <section className="subhero">
         <span className="eyebrow">
           RailVision shop
@@ -133,7 +151,7 @@ export default function ShopPage() {
         textDecoration: "line-through",
       }}
     >
-      {formatCurrency(product.price + 200)}
+      {formatCurrency(product.price + 500)}
     </span>
 
     <strong
@@ -439,5 +457,7 @@ function ProductDetailsModal({
         ) : null}
       </section>
     </div>
+    
   );
+  
 }
