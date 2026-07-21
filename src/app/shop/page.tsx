@@ -1,5 +1,5 @@
 "use client";
-
+import { AffiliateTracker } from "@/components/AffiliateTracker";
 import { FormEvent, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -20,6 +20,7 @@ import {
   formatCurrency,
   Product
 } from "@/lib/products";
+
 
 export default function ShopPage() {
   const { catalog, loading } = useProductCatalog();
@@ -63,7 +64,9 @@ export default function ShopPage() {
   }
 
   return (
-    <>
+  <>
+    <AffiliateTracker />
+
     <div
   style={{
     width: "100%",
@@ -306,7 +309,7 @@ function ProductDetailsModal({
         >
           <X size={20} />
         </button>
-
+        
         <div
           style={{
             display: "grid",

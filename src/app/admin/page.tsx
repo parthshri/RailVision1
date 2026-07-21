@@ -22,7 +22,6 @@ import {
   Mail,
   Package,
   UsersRound,
-  X,
 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,56 +29,37 @@ import { db } from "@/lib/firebase";
 import { formatCurrency } from "@/lib/products";
 
 import {
-  OrderStatus,
-  PaymentStatus,
+  type AffiliateCommissionStatus,
+  type OrderStatus,
+  type PaymentStatus,
+  approveAffiliateApplication,
+  rejectAffiliateApplication,
+  updateAffiliateCommissionStatus,
   updateOrderPaymentStatus,
   updateOrderStatus,
 } from "@/lib/firestoreActions";
 
-type FirestoreDoc = Record<string, unknown> & {
-  id: string;
-};
+import {
+  AffiliateApplications,
+} from "@/components/admin/AffiliateApplications";
 
-type AdminOrder = FirestoreDoc & {
-  userId?: string;
+import {
+  AdminRecordList,
+} from "@/components/admin/AdminRecordList";
 
-  customerInfo?: {
-    fullName?: string;
-    email?: string;
-    phone?: string;
-    alternatePhone?: string;
-  };
+import {
+  OrderAdminList,
+} from "@/components/admin/OrderAdminList";
 
-  shippingAddress?: {
-    house?: string;
-    street?: string;
-    area?: string;
-    city?: string;
-    state?: string;
-    pinCode?: string;
-    country?: string;
-  };
+import {
+  OrderDetails,
+} from "@/components/admin/OrderDetails";
 
-  products?: {
-    productId?: string;
-    name: string;
-    quantity: number;
-    price: number;
-  }[];
-
-  total?: number;
-
-  paymentMethod?:
-    | "COD"
-    | "UPI_MANUAL"
-    | "ONLINE";
-
-  paymentStatus?: PaymentStatus;
-
-  orderStatus?: OrderStatus;
-
-  transactionReference?: string;
-};
+import type {
+  AdminOrder,
+  AffiliateApplication,
+  FirestoreDoc,
+} from "@/components/admin/types";
 
 export default function AdminPage() {
   const {
@@ -100,6 +80,13 @@ export default function AdminPage() {
   const [customers, setCustomers] =
     useState<FirestoreDoc[]>([]);
 
+  const [
+    affiliateApplications,
+    setAffiliateApplications,
+  ] = useState<
+    AffiliateApplication[]
+  >([]);
+
   const [selectedOrder, setSelectedOrder] =
     useState<AdminOrder | null>(null);
 
@@ -111,6 +98,16 @@ export default function AdminPage() {
   const [
     updatingPaymentStatusId,
     setUpdatingPaymentStatusId,
+  ] = useState<string | null>(null);
+
+  const [
+    updatingAffiliateOrderId,
+    setUpdatingAffiliateOrderId,
+  ] = useState<string | null>(null);
+
+  const [
+    reviewingApplicationId,
+    setReviewingApplicationId,
   ] = useState<string | null>(null);
 
   useEffect(() => {
@@ -149,6 +146,33 @@ export default function AdminPage() {
 
       onSnapshot(
         query(
+          collection(
+            db,
+            "affiliateApplications"
+          ),
+          orderBy("createdAt", "desc")
+        ),
+        (snapshot) => {
+          setAffiliateApplications(
+            snapshot.docs.map(
+              (document) =>
+                ({
+                  id: document.id,
+                  ...document.data(),
+                }) as AffiliateApplication
+            )
+          );
+        },
+        (error) => {
+          console.error(
+            "Failed to load affiliate applications:",
+            error
+          );
+        }
+      ),
+
+      onSnapshot(
+        query(
           collection(db, "contacts"),
           orderBy("createdAt", "desc")
         ),
@@ -172,7 +196,10 @@ export default function AdminPage() {
 
       onSnapshot(
         query(
-          collection(db, "proInquiries"),
+          collection(
+            db,
+            "proInquiries"
+          ),
           orderBy("createdAt", "desc")
         ),
         (snapshot) => {
@@ -207,7 +234,7 @@ export default function AdminPage() {
         },
         (error) => {
           console.error(
-            "Failed to load users:",
+            "Failed to load customers:",
             error
           );
         }
@@ -225,11 +252,34 @@ export default function AdminPage() {
     () =>
       orders.reduce(
         (sum, order) =>
-          sum + Number(order.total || 0),
+          sum +
+          Number(order.total || 0),
         0
       ),
     [orders]
   );
+
+  const pendingAffiliateCommission =
+    useMemo(
+      () =>
+        orders.reduce((sum, order) => {
+          if (
+            order.affiliateStatus !==
+            "PENDING"
+          ) {
+            return sum;
+          }
+
+          return (
+            sum +
+            Number(
+              order.affiliateCommission ||
+                0
+            )
+          );
+        }, 0),
+      [orders]
+    );
 
   async function changeOrderStatus(
     orderId: string,
@@ -247,10 +297,7 @@ export default function AdminPage() {
         "Order status updated."
       );
     } catch (error) {
-      console.error(
-        "Order status update failed:",
-        error
-      );
+      console.error(error);
 
       toast.error(
         "Failed to update order status."
@@ -262,32 +309,155 @@ export default function AdminPage() {
 
   async function changePaymentStatus(
     orderId: string,
-    paymentStatus: PaymentStatus
+    status: PaymentStatus
   ) {
     setUpdatingPaymentStatusId(orderId);
 
     try {
       await updateOrderPaymentStatus(
         orderId,
-        paymentStatus
+        status
       );
 
       toast.success(
-        paymentStatus === "PAID"
+        status === "PAID"
           ? "Payment marked as verified."
           : "Payment status updated."
       );
     } catch (error) {
-      console.error(
-        "Payment status update failed:",
-        error
-      );
+      console.error(error);
 
       toast.error(
         "Failed to update payment status."
       );
     } finally {
       setUpdatingPaymentStatusId(null);
+    }
+  }
+
+  async function changeAffiliateStatus(
+    orderId: string,
+    status: AffiliateCommissionStatus
+  ) {
+    setUpdatingAffiliateOrderId(orderId);
+
+    try {
+      await updateAffiliateCommissionStatus(
+        orderId,
+        status
+      );
+
+      toast.success(
+        "Affiliate commission updated."
+      );
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Failed to update affiliate commission."
+      );
+    } finally {
+      setUpdatingAffiliateOrderId(null);
+    }
+  }
+
+  async function approveApplication(
+    application: AffiliateApplication,
+    commissionRate: number
+  ) {
+    if (
+      !application.fullName ||
+      !application.email ||
+      !application.instagramUsername
+    ) {
+      toast.error(
+        "The application is missing required details."
+      );
+      return;
+    }
+
+    if (
+      !Number.isFinite(commissionRate) ||
+      commissionRate < 1 ||
+      commissionRate > 50
+    ) {
+      toast.error(
+        "Enter a commission rate between 1% and 50%."
+      );
+      return;
+    }
+
+    setReviewingApplicationId(
+      application.id
+    );
+
+    try {
+      const result =
+        await approveAffiliateApplication(
+          application.id,
+          {
+            fullName:
+              application.fullName,
+
+            email:
+              application.email,
+
+            instagramUsername:
+              application.instagramUsername,
+
+            instagramProfileUrl:
+              application.instagramProfileUrl,
+
+            followers:
+              application.followers,
+
+            contentCategory:
+              application.contentCategory,
+          },
+          commissionRate
+        );
+
+      toast.success(
+        `Affiliate approved. Code: ${result.affiliateCode}`
+      );
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not approve the application."
+      );
+    } finally {
+      setReviewingApplicationId(null);
+    }
+  }
+
+  async function rejectApplication(
+    applicationId: string
+  ) {
+    setReviewingApplicationId(
+      applicationId
+    );
+
+    try {
+      await rejectAffiliateApplication(
+        applicationId
+      );
+
+      toast.success(
+        "Affiliate application rejected."
+      );
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not reject the application."
+      );
+    } finally {
+      setReviewingApplicationId(null);
     }
   }
 
@@ -308,8 +478,8 @@ export default function AdminPage() {
           </h1>
 
           <p>
-            Login with an email listed in
-            NEXT_PUBLIC_ADMIN_EMAILS.
+            Login using an approved admin
+            email address.
           </p>
 
           <Link
@@ -331,14 +501,15 @@ export default function AdminPage() {
         </span>
 
         <h1>
-          Operate RailVision commerce,
-          inquiries, customers, and analytics.
+          Manage RailVision orders,
+          customers, applications, and
+          affiliate commissions.
         </h1>
 
         <p>
-          Manage orders, payment verification,
-          customers, inquiries, and delivery
-          status.
+          Review payments, delivery status,
+          creator applications, and customer
+          communications.
         </p>
       </section>
 
@@ -361,8 +532,11 @@ export default function AdminPage() {
           },
           {
             icon: Mail,
-            label: "Pro inquiries",
-            value: String(inquiries.length),
+            label:
+              "Pending affiliate commission",
+            value: formatCurrency(
+              pendingAffiliateCommission
+            ),
           },
         ].map((metric) => (
           <div
@@ -370,7 +544,9 @@ export default function AdminPage() {
             key={metric.label}
           >
             <metric.icon size={28} />
+
             <span>{metric.value}</span>
+
             <p>{metric.label}</p>
           </div>
         ))}
@@ -385,6 +561,9 @@ export default function AdminPage() {
           onPaymentStatusChange={
             changePaymentStatus
           }
+          onAffiliateStatusChange={
+            changeAffiliateStatus
+          }
           onSelectOrder={
             setSelectedOrder
           }
@@ -394,15 +573,33 @@ export default function AdminPage() {
           updatingPaymentStatusId={
             updatingPaymentStatusId
           }
+          updatingAffiliateOrderId={
+            updatingAffiliateOrderId
+          }
         />
 
-        <AdminList
+        <AffiliateApplications
+          applications={
+            affiliateApplications
+          }
+          reviewingApplicationId={
+            reviewingApplicationId
+          }
+          onApprove={
+            approveApplication
+          }
+          onReject={
+            rejectApplication
+          }
+        />
+
+        <AdminRecordList
           title="Customers"
           items={customers}
           fields={["email", "name"]}
         />
 
-        <AdminList
+        <AdminRecordList
           title="RailVision Pro inquiries"
           items={inquiries}
           fields={[
@@ -412,7 +609,7 @@ export default function AdminPage() {
           ]}
         />
 
-        <AdminList
+        <AdminRecordList
           title="Contact messages"
           items={contacts}
           fields={[
@@ -433,501 +630,4 @@ export default function AdminPage() {
       ) : null}
     </>
   );
-}
-
-type OrderAdminListProps = {
-  orders: AdminOrder[];
-
-  onStatusChange: (
-    orderId: string,
-    status: OrderStatus
-  ) => Promise<void>;
-
-  onPaymentStatusChange: (
-    orderId: string,
-    status: PaymentStatus
-  ) => Promise<void>;
-
-  onSelectOrder: (
-    order: AdminOrder
-  ) => void;
-
-  updatingOrderStatusId:
-    | string
-    | null;
-
-  updatingPaymentStatusId:
-    | string
-    | null;
-};
-
-function OrderAdminList({
-  orders,
-  onStatusChange,
-  onPaymentStatusChange,
-  onSelectOrder,
-  updatingOrderStatusId,
-  updatingPaymentStatusId,
-}: OrderAdminListProps) {
-  return (
-    <article className="admin-list">
-      <h2>Orders</h2>
-
-      {orders.length === 0 ? (
-        <p>No orders yet.</p>
-      ) : null}
-
-      {orders.map((order) => {
-        const orderUpdating =
-          updatingOrderStatusId ===
-          order.id;
-
-        const paymentUpdating =
-          updatingPaymentStatusId ===
-          order.id;
-
-        return (
-          <div
-            className="admin-row"
-            key={order.id}
-            onClick={() =>
-              onSelectOrder(order)
-            }
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              gap: 12,
-              cursor: "pointer",
-            }}
-          >
-            <strong>
-              Order #
-              {order.id
-                .slice(0, 8)
-                .toUpperCase()}
-            </strong>
-
-            <span>
-              Customer:{" "}
-              {order.customerInfo
-                ?.email || "-"}
-            </span>
-
-            <span>
-              Total:{" "}
-              {formatCurrency(
-                Number(order.total || 0)
-              )}
-            </span>
-
-            <span>
-              Payment method:{" "}
-              {formatPaymentMethod(
-                order.paymentMethod
-              )}
-            </span>
-
-            {order.transactionReference ? (
-              <span>
-                UTR / Transaction ID:{" "}
-                <strong>
-                  {
-                    order.transactionReference
-                  }
-                </strong>
-              </span>
-            ) : null}
-
-            <label
-              onClick={(event) =>
-                event.stopPropagation()
-              }
-            >
-              Order status
-
-              <select
-                value={
-                  order.orderStatus ||
-                  "PLACED"
-                }
-                disabled={orderUpdating}
-                onClick={(event) =>
-                  event.stopPropagation()
-                }
-                onChange={(event) =>
-                  onStatusChange(
-                    order.id,
-                    event.target
-                      .value as OrderStatus
-                  )
-                }
-              >
-                <option value="PLACED">
-                  New Order
-                </option>
-
-                <option value="PROCESSING">
-                  Processing
-                </option>
-
-                <option value="SHIPPED">
-                  Shipped
-                </option>
-
-                <option value="DELIVERED">
-                  Delivered
-                </option>
-
-                <option value="CANCELLED">
-                  Cancelled
-                </option>
-              </select>
-            </label>
-
-            <label
-              onClick={(event) =>
-                event.stopPropagation()
-              }
-            >
-              Payment verification
-
-              <select
-                value={
-                  order.paymentStatus ||
-                  "PENDING"
-                }
-                disabled={paymentUpdating}
-                onClick={(event) =>
-                  event.stopPropagation()
-                }
-                onChange={(event) =>
-                  onPaymentStatusChange(
-                    order.id,
-                    event.target
-                      .value as PaymentStatus
-                  )
-                }
-              >
-                <option value="PENDING">
-                  Pending
-                </option>
-
-                <option value="AWAITING_VERIFICATION">
-                  Awaiting Verification
-                </option>
-
-                <option value="PAID">
-                  Verified — Paid
-                </option>
-
-                <option value="FAILED">
-                  Failed / Not Received
-                </option>
-              </select>
-            </label>
-
-            {orderUpdating ||
-            paymentUpdating ? (
-              <small
-                style={{
-                  color: "var(--muted)",
-                }}
-              >
-                Updating order...
-              </small>
-            ) : null}
-          </div>
-        );
-      })}
-    </article>
-  );
-}
-
-function OrderDetails({
-  order,
-  onClose,
-}: {
-  order: AdminOrder;
-  onClose: () => void;
-}) {
-  const address = [
-    order.shippingAddress?.house,
-    order.shippingAddress?.street,
-    order.shippingAddress?.area,
-    order.shippingAddress?.city,
-    order.shippingAddress?.state,
-    order.shippingAddress?.pinCode,
-    order.shippingAddress?.country,
-  ]
-    .filter(Boolean)
-    .join(", ");
-
-  return (
-    <section className="section">
-      <div
-        className="panel"
-        style={{
-          position: "relative",
-          maxWidth: 900,
-          margin: "0 auto",
-        }}
-      >
-        <button
-          type="button"
-          className="icon-link"
-          aria-label="Close order details"
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-          }}
-        >
-          <X size={18} />
-        </button>
-
-        <h2>Order Details</h2>
-
-        <p>
-          <strong>Order ID:</strong>{" "}
-          {order.id}
-        </p>
-
-        <hr />
-
-        <h3>Customer Details</h3>
-
-        <p>
-          <strong>Name:</strong>{" "}
-          {order.customerInfo?.fullName ||
-            "-"}
-        </p>
-
-        <p>
-          <strong>Email:</strong>{" "}
-          {order.customerInfo?.email ||
-            "-"}
-        </p>
-
-        <p>
-          <strong>Phone:</strong>{" "}
-          {order.customerInfo?.phone ||
-            "-"}
-        </p>
-
-        {order.customerInfo
-          ?.alternatePhone ? (
-          <p>
-            <strong>
-              Alternate phone:
-            </strong>{" "}
-            {
-              order.customerInfo
-                .alternatePhone
-            }
-          </p>
-        ) : null}
-
-        <hr />
-
-        <h3>Shipping Address</h3>
-
-        <p>{address || "-"}</p>
-
-        <hr />
-
-        <h3>Products</h3>
-
-        {order.products?.length ? (
-          order.products.map(
-            (product, index) => (
-              <div
-                key={
-                  product.productId ||
-                  `${product.name}-${index}`
-                }
-                style={{
-                  display: "flex",
-                  justifyContent:
-                    "space-between",
-                  gap: 16,
-                  marginBottom: 12,
-                }}
-              >
-                <span>
-                  {product.name} ×{" "}
-                  {product.quantity}
-                </span>
-
-                <strong>
-                  {formatCurrency(
-                    product.price *
-                      product.quantity
-                  )}
-                </strong>
-              </div>
-            )
-          )
-        ) : (
-          <p>No product details found.</p>
-        )}
-
-        <hr />
-
-        <h3>Payment Details</h3>
-
-        <p>
-          <strong>Method:</strong>{" "}
-          {formatPaymentMethod(
-            order.paymentMethod
-          )}
-        </p>
-
-        <p>
-          <strong>
-            Payment status:
-          </strong>{" "}
-          {formatPaymentStatus(
-            order.paymentStatus
-          )}
-        </p>
-
-        {order.transactionReference ? (
-          <p>
-            <strong>
-              UTR / Transaction ID:
-            </strong>{" "}
-            {order.transactionReference}
-          </p>
-        ) : null}
-
-        <p>
-          <strong>Order status:</strong>{" "}
-          {formatOrderStatus(
-            order.orderStatus
-          )}
-        </p>
-
-        <h3>
-          Total:{" "}
-          {formatCurrency(
-            Number(order.total || 0)
-          )}
-        </h3>
-
-        <button
-          type="button"
-          className="button secondary"
-          onClick={onClose}
-          style={{
-            marginTop: 18,
-          }}
-        >
-          Close
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function AdminList({
-  title,
-  items,
-  fields,
-}: {
-  title: string;
-  items: FirestoreDoc[];
-  fields: string[];
-}) {
-  return (
-    <article className="admin-list">
-      <h2>{title}</h2>
-
-      {items.length === 0 ? (
-        <p>No records yet.</p>
-      ) : null}
-
-      {items
-        .slice(0, 8)
-        .map((item) => (
-          <div
-            className="admin-row"
-            key={item.id}
-          >
-            <strong>
-              {item.id.slice(0, 8)}
-            </strong>
-
-            {fields.map((field) => (
-              <span key={field}>
-                {String(
-                  item[field] ?? "-"
-                )}
-              </span>
-            ))}
-          </div>
-        ))}
-    </article>
-  );
-}
-
-function formatPaymentMethod(
-  method: AdminOrder["paymentMethod"]
-) {
-  if (method === "UPI_MANUAL") {
-    return "UPI — Manual Verification";
-  }
-
-  if (method === "COD") {
-    return "Cash on Delivery";
-  }
-
-  if (method === "ONLINE") {
-    return "Online Payment";
-  }
-
-  return "-";
-}
-
-function formatPaymentStatus(
-  status: PaymentStatus | undefined
-) {
-  if (
-    status === "AWAITING_VERIFICATION"
-  ) {
-    return "Awaiting Verification";
-  }
-
-  if (status === "PAID") {
-    return "Verified — Paid";
-  }
-
-  if (status === "FAILED") {
-    return "Failed / Not Received";
-  }
-
-  return "Pending";
-}
-
-function formatOrderStatus(
-  status: OrderStatus | undefined
-) {
-  if (status === "PROCESSING") {
-    return "Processing";
-  }
-
-  if (status === "SHIPPED") {
-    return "Shipped";
-  }
-
-  if (status === "DELIVERED") {
-    return "Delivered";
-  }
-
-  if (status === "CANCELLED") {
-    return "Cancelled";
-  }
-
-  return "Placed";
 }

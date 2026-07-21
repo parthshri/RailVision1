@@ -47,9 +47,18 @@ export type Order = {
     | "SHIPPED"
     | "DELIVERED"
     | "CANCELLED";
-
+  
   transactionReference?: string;
+    affiliateCode?: string;
+affiliateName?: string;
+affiliateCommission?: number;
 
+affiliateStatus?:
+  | "PENDING"
+  | "APPROVED"
+  | "PAID"
+  | "REJECTED";
+  
   createdAt?: unknown;
   updatedAt?: unknown;
 };

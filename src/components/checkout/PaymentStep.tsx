@@ -1,19 +1,34 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { QRCodeSVG } from "qrcode.react";
+
 import {
   Banknote,
   Copy,
   QrCode,
 } from "lucide-react";
 
+import {
+  getAffiliateCode,
+  removeAffiliateCode,
+} from "@/lib/affiliateTracking";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useCheckout } from "@/contexts/CheckoutContext";
 
-import { createOrder } from "@/lib/firestoreActions";
+import {
+  createOrder,
+  getValidAffiliate,
+} from "@/lib/firestoreActions";
 
 import {
   formatCurrency,
@@ -23,6 +38,13 @@ import {
 
 type PaymentStepProps = {
   directProduct?: Product | null;
+};
+
+type CheckoutItem = {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
 };
 
 const COD_CHARGE = 100;
@@ -43,11 +65,15 @@ export default function PaymentStep({
   const cart = useCart();
   const router = useRouter();
 
-  const [transactionReference, setTransactionReference] =
-    useState("");
+  const [
+    transactionReference,
+    setTransactionReference,
+  ] = useState("");
 
-  const [placingOrder, setPlacingOrder] =
-    useState(false);
+  const [
+    placingOrder,
+    setPlacingOrder,
+  ] = useState(false);
 
   const upiId =
     process.env.NEXT_PUBLIC_UPI_ID || "";
@@ -56,55 +82,44 @@ export default function PaymentStep({
     process.env.NEXT_PUBLIC_UPI_NAME ||
     "RailVision";
 
-  /*
-   * Supports both:
-   * 1. Direct Buy Now checkout
-   * 2. Cart checkout
-   */
-  const orderItems = useMemo(() => {
-    if (directProduct) {
-      return [
-        {
-          productId: directProduct.id,
-          name: directProduct.name,
-          quantity: 1,
-          price: directProduct.price,
-        },
-      ];
-    }
+  const orderItems =
+    useMemo<CheckoutItem[]>(() => {
+      if (directProduct) {
+        return [
+          {
+            productId: directProduct.id,
+            name: directProduct.name,
+            quantity: 1,
+            price: directProduct.price,
+          },
+        ];
+      }
 
-    return cart.items
-      .map((item) => {
-        const product = getProduct(
-          item.productId
+      return cart.items
+        .map((item) => {
+          const product = getProduct(
+            item.productId
+          );
+
+          if (!product) {
+            return null;
+          }
+
+          return {
+            productId: product.id,
+            name: product.name,
+            quantity: item.quantity,
+            price: product.price,
+          };
+        })
+        .filter(
+          (
+            item
+          ): item is CheckoutItem =>
+            item !== null
         );
+    }, [cart.items, directProduct]);
 
-        if (!product) {
-          return null;
-        }
-
-        return {
-          productId: item.productId,
-          name: product.name,
-          quantity: item.quantity,
-          price: product.price,
-        };
-      })
-      .filter(
-        (
-          item
-        ): item is {
-          productId: string;
-          name: string;
-          quantity: number;
-          price: number;
-        } => item !== null
-      );
-  }, [cart.items, directProduct]);
-
-  /*
-   * Product total before payment charges.
-   */
   const productTotal = useMemo(
     () =>
       orderItems.reduce(
@@ -116,10 +131,38 @@ export default function PaymentStep({
     [orderItems]
   );
 
-  /*
-   * COD costs ₹100 extra.
-   * UPI has no extra charge.
-   */
+  const codAllowed = useMemo(() => {
+    if (directProduct) {
+      return (
+        directProduct.codAvailable !==
+        false
+      );
+    }
+
+    return cart.items.every((item) => {
+      const product = getProduct(
+        item.productId
+      );
+
+      return (
+        product?.codAvailable !== false
+      );
+    });
+  }, [cart.items, directProduct]);
+
+  useEffect(() => {
+    if (
+      !codAllowed &&
+      paymentMethod === "COD"
+    ) {
+      setPaymentMethod("");
+    }
+  }, [
+    codAllowed,
+    paymentMethod,
+    setPaymentMethod,
+  ]);
+
   const codCharge =
     paymentMethod === "COD"
       ? COD_CHARGE
@@ -128,15 +171,8 @@ export default function PaymentStep({
   const payableTotal =
     productTotal + codCharge;
 
-  /*
-   * This is used inside the UPI QR.
-   * UPI customers pay only the product total.
-   */
   const upiAmount = productTotal;
 
-  /*
-   * Stable reference for the current checkout session.
-   */
   const orderReference = useMemo(
     () =>
       `RV${Date.now()
@@ -145,15 +181,6 @@ export default function PaymentStep({
     []
   );
 
-  /*
-   * Dynamic UPI link with:
-   * - UPI ID
-   * - Merchant name
-   * - Exact amount
-   * - Currency
-   * - Reference
-   * - Note
-   */
   const upiLink =
     upiId && upiAmount > 0
       ? [
@@ -218,7 +245,9 @@ export default function PaymentStep({
     }
 
     if (
-      !/^[a-zA-Z0-9_-]+$/.test(reference)
+      !/^[a-zA-Z0-9_-]+$/.test(
+        reference
+      )
     ) {
       toast.error(
         "The reference can only contain letters, numbers, hyphens, or underscores."
@@ -247,6 +276,16 @@ export default function PaymentStep({
     }
 
     if (
+      paymentMethod === "COD" &&
+      !codAllowed
+    ) {
+      toast.error(
+        "Cash on Delivery is unavailable for this order."
+      );
+      return;
+    }
+
+    if (
       orderItems.length === 0 ||
       productTotal <= 0
     ) {
@@ -266,10 +305,41 @@ export default function PaymentStep({
     setPlacingOrder(true);
 
     try {
-      /*
-       * Keep transactionReference completely absent
-       * for COD. Firestore rejects undefined values.
-       */
+      const savedAffiliateCode =
+        getAffiliateCode();
+
+      const validAffiliate =
+        savedAffiliateCode
+          ? await getValidAffiliate(
+              savedAffiliateCode
+            )
+          : null;
+
+      const affiliateCommission =
+        validAffiliate
+          ? Math.round(
+              (productTotal *
+                validAffiliate.commissionRate) /
+                100
+            )
+          : 0;
+
+      const affiliateData =
+        validAffiliate
+          ? {
+              affiliateCode:
+                validAffiliate.code,
+
+              affiliateName:
+                validAffiliate.name,
+
+              affiliateCommission,
+
+              affiliateStatus:
+                "PENDING" as const,
+            }
+          : {};
+
       const baseOrder = {
         userId: user.uid,
 
@@ -281,14 +351,16 @@ export default function PaymentStep({
 
         total: payableTotal,
 
-        paymentMethod,
-
         paymentStatus:
-          paymentMethod === "UPI_MANUAL"
+          paymentMethod ===
+          "UPI_MANUAL"
             ? ("AWAITING_VERIFICATION" as const)
             : ("PENDING" as const),
 
-        orderStatus: "PLACED" as const,
+        orderStatus:
+          "PLACED" as const,
+
+        ...affiliateData,
       };
 
       const orderDocument =
@@ -307,12 +379,13 @@ export default function PaymentStep({
 
               paymentMethod: "COD",
             });
-            if (paymentMethod === "COD" && !codAllowed) {
-  toast.error(
-    "Cash on Delivery is unavailable for this order."
-  );
-  return;
-}
+
+      if (
+        savedAffiliateCode &&
+        !validAffiliate
+      ) {
+        removeAffiliateCode();
+      }
 
       const successQuery =
         new URLSearchParams({
@@ -321,7 +394,8 @@ export default function PaymentStep({
         });
 
       if (
-        paymentMethod === "UPI_MANUAL"
+        paymentMethod ===
+        "UPI_MANUAL"
       ) {
         toast.success(
           "Order submitted for payment verification."
@@ -348,24 +422,12 @@ export default function PaymentStep({
       setPlacingOrder(false);
     }
   }
-  const codAllowed = useMemo(() => {
-  if (directProduct) {
-    return directProduct.codAvailable;
-  }
-
-  return cart.items.every((item) => {
-    const product = getProduct(item.productId);
-    return product?.codAvailable !== false;
-  });
-}, [cart.items, directProduct]);
 
   return (
     <div className="panel">
       <h2>
         Payment & Order Summary
       </h2>
-
-      {/* Customer information */}
 
       <div
         style={{
@@ -394,7 +456,9 @@ export default function PaymentStep({
             <strong>
               Alternate phone:
             </strong>{" "}
-            {customerInfo.alternatePhone}
+            {
+              customerInfo.alternatePhone
+            }
           </p>
         ) : null}
 
@@ -423,8 +487,6 @@ export default function PaymentStep({
 
       <hr />
 
-      {/* Products */}
-
       <h3>Products</h3>
 
       <div
@@ -435,7 +497,8 @@ export default function PaymentStep({
       >
         {orderItems.map((item) => {
           const finalPrice =
-            item.price * item.quantity;
+            item.price *
+            item.quantity;
 
           const crossedPrice =
             (item.price +
@@ -468,7 +531,8 @@ export default function PaymentStep({
                   style={{
                     display: "block",
                     marginTop: 5,
-                    color: "var(--muted)",
+                    color:
+                      "var(--muted)",
                   }}
                 >
                   Quantity:{" "}
@@ -479,19 +543,20 @@ export default function PaymentStep({
               <div
                 style={{
                   display: "flex",
-                  flexDirection: "column",
+                  flexDirection:
+                    "column",
                   alignItems: "center",
-                  justifyContent:
-                    "center",
                   textAlign: "center",
                 }}
               >
                 <span
                   style={{
-                    color: "var(--muted)",
+                    color:
+                      "var(--muted)",
                     textDecoration:
                       "line-through",
-                    fontSize: "0.9rem",
+                    fontSize:
+                      "0.9rem",
                   }}
                 >
                   {formatCurrency(
@@ -501,8 +566,10 @@ export default function PaymentStep({
 
                 <strong
                   style={{
-                    color: "var(--green)",
-                    fontSize: "1.25rem",
+                    color:
+                      "var(--green)",
+                    fontSize:
+                      "1.25rem",
                   }}
                 >
                   {formatCurrency(
@@ -514,8 +581,6 @@ export default function PaymentStep({
           );
         })}
       </div>
-
-      {/* Price breakdown */}
 
       <div
         style={{
@@ -554,7 +619,8 @@ export default function PaymentStep({
                 "space-between",
               gap: 16,
               marginBottom: 12,
-              color: "var(--amber)",
+              color:
+                "var(--amber)",
             }}
           >
             <span>
@@ -600,8 +666,6 @@ export default function PaymentStep({
         </div>
       </div>
 
-      {/* Payment methods */}
-
       <h3
         style={{
           marginTop: 28,
@@ -626,56 +690,31 @@ export default function PaymentStep({
             paymentMethod === "COD"
               ? "rgba(85,230,255,0.06)"
               : "rgba(255,255,255,0.02)",
-          cursor: "pointer",
+          cursor: codAllowed
+            ? "pointer"
+            : "not-allowed",
+          opacity: codAllowed
+            ? 1
+            : 0.65,
         }}
       >
         <input
-  type="radio"
-  name="paymentMethod"
-  checked={paymentMethod === "COD"}
-  disabled={!codAllowed}
-  onChange={() => {
-    if (codAllowed) {
-      setPaymentMethod("COD");
-    }
-  }
+          type="radio"
+          name="paymentMethod"
+          checked={
+            paymentMethod === "COD"
           }
+          disabled={!codAllowed}
+          onChange={() => {
+            if (codAllowed) {
+              setPaymentMethod("COD");
+            }
+          }}
           style={{
             width: 20,
             minHeight: 20,
           }}
         />
-        {!codAllowed ? (
-  <div
-    style={{
-      marginBottom: 16,
-      padding: 15,
-      border: "1px solid rgba(246,184,75,0.35)",
-      borderRadius: 8,
-      background: "rgba(246,184,75,0.07)",
-    }}
-  >
-    <strong
-      style={{
-        color: "var(--amber)",
-      }}
-    >
-      Cash on Delivery is unavailable for this order.
-    </strong>
-
-    <p
-      style={{
-        marginTop: 7,
-        marginBottom: 0,
-      }}
-    >
-      This order contains a high-value or made-to-order product.
-      Advance payment is required before purchasing raw materials
-      and preparing the product. Please contact RailVision Support
-      for more details.
-    </p>
-  </div>
-) : null}
 
         <span>
           <strong
@@ -701,6 +740,43 @@ export default function PaymentStep({
           </small>
         </span>
       </label>
+
+      {!codAllowed ? (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: 15,
+            border:
+              "1px solid rgba(246,184,75,0.35)",
+            borderRadius: 8,
+            background:
+              "rgba(246,184,75,0.07)",
+          }}
+        >
+          <strong
+            style={{
+              color: "var(--amber)",
+            }}
+          >
+            Cash on Delivery is
+            unavailable for this order.
+          </strong>
+
+          <p
+            style={{
+              marginTop: 7,
+              marginBottom: 0,
+            }}
+          >
+            This order contains a
+            high-value or made-to-order
+            product. Advance payment is
+            required before purchasing
+            raw materials and preparing
+            the product.
+          </p>
+        </div>
+      ) : null}
 
       {paymentMethod === "COD" ? (
         <div
@@ -799,8 +875,6 @@ export default function PaymentStep({
         </span>
       </label>
 
-      {/* Manual UPI details */}
-
       {paymentMethod ===
       "UPI_MANUAL" ? (
         <div
@@ -877,7 +951,8 @@ export default function PaymentStep({
             <div>
               <small
                 style={{
-                  color: "var(--muted)",
+                  color:
+                    "var(--muted)",
                 }}
               >
                 UPI ID
@@ -981,8 +1056,6 @@ export default function PaymentStep({
         </div>
       ) : null}
 
-      {/* Navigation */}
-
       <div
         style={{
           display: "flex",
@@ -1012,7 +1085,9 @@ export default function PaymentStep({
             productTotal <= 0 ||
             (paymentMethod ===
               "UPI_MANUAL" &&
-              !upiId)
+              !upiId) ||
+            (paymentMethod === "COD" &&
+              !codAllowed)
           }
         >
           {placingOrder
@@ -1025,10 +1100,4 @@ export default function PaymentStep({
       </div>
     </div>
   );
-
-  useEffect(() => {
-  if (!codAllowed && paymentMethod === "COD") {
-    setPaymentMethod("");
-  }
-}, [codAllowed, paymentMethod, setPaymentMethod]);
 }
