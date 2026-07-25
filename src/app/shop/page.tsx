@@ -1,42 +1,61 @@
 "use client";
-import { AffiliateTracker } from "@/components/AffiliateTracker";
-import { FormEvent, useState } from "react";
+
+import {
+  FormEvent,
+  useState,
+} from "react";
+
 import toast from "react-hot-toast";
+
 import {
   BellRing,
   CheckCircle2,
   FileText,
   ShoppingCart,
-  X
+  X,
 } from "lucide-react";
 
+import { AffiliateTracker } from "@/components/AffiliateTracker";
 import { CheckoutButton } from "@/components/CheckoutButton";
 import { ProductVisual } from "@/components/ProductVisual";
 import { Skeleton } from "@/components/Skeleton";
+
 import { useCart } from "@/contexts/CartContext";
 import { useProductCatalog } from "@/hooks/useProductCatalog";
-import { addNotificationSignup } from "@/lib/firestoreActions";
+
+import {
+  addNotificationSignup,
+} from "@/lib/firestoreActions";
+
 import {
   formatCurrency,
-  Product
+  Product,
 } from "@/lib/products";
 
-
 export default function ShopPage() {
-  const { catalog, loading } = useProductCatalog();
+  const {
+    catalog,
+    loading,
+  } = useProductCatalog();
+
   const cart = useCart();
 
-  const [notifyLoading, setNotifyLoading] =
-    useState(false);
+  const [
+    notifyLoading,
+    setNotifyLoading,
+  ] = useState(false);
 
-  const [selectedProduct, setSelectedProduct] =
-    useState<Product | null>(null);
+  const [
+    selectedProduct,
+    setSelectedProduct,
+  ] = useState<Product | null>(null);
 
   async function notify(
     event: FormEvent<HTMLFormElement>,
     productId: string
   ) {
     event.preventDefault();
+
     setNotifyLoading(true);
 
     const form = new FormData(
@@ -46,7 +65,7 @@ export default function ShopPage() {
     try {
       await addNotificationSignup({
         productId,
-        email: form.get("email")
+        email: form.get("email"),
       });
 
       event.currentTarget.reset();
@@ -54,7 +73,12 @@ export default function ShopPage() {
       toast.success(
         "You are on the RailVision Pro notify list."
       );
-    } catch {
+    } catch (error) {
+      console.error(
+        "Notification signup failed:",
+        error
+      );
+
       toast.error(
         "Could not save email. Please try again."
       );
@@ -64,47 +88,57 @@ export default function ShopPage() {
   }
 
   return (
-  <>
-    <AffiliateTracker />
+    <>
+      <AffiliateTracker />
 
-    <div
-  style={{
-    width: "100%",
-    background:
-      "linear-gradient(90deg,#ff7a18,#ffb347)",
-    color: "#fff",
-    textAlign: "center",
-    padding: "12px 20px",
-    fontWeight: 700,
-    fontSize: "15px",
-    letterSpacing: "0.4px",
-    boxShadow: "0 4px 15px rgba(0,0,0,.15)",
-  }}
->
-  🎉 <strong>Launch Offer!</strong> Exclusive discounts for our
-  <strong> first 100 customers</strong>. Limited-time introductory
-  pricing — Order yours today!
-</div>
+      <div
+        style={{
+          width: "100%",
+          background:
+            "linear-gradient(90deg, #ff7a18, #ffb347)",
+          color: "#ffffff",
+          textAlign: "center",
+          padding: "12px 20px",
+          fontWeight: 700,
+          fontSize: "15px",
+          letterSpacing: "0.4px",
+          boxShadow:
+            "0 4px 15px rgba(0,0,0,.15)",
+        }}
+      >
+        🎉{" "}
+        <strong>
+          Launch Offer!
+        </strong>{" "}
+        Exclusive discounts for our{" "}
+        <strong>
+          first 100 customers
+        </strong>
+        . Limited-time introductory pricing —
+        Order yours today!
+      </div>
+
       <section className="subhero">
         <span className="eyebrow">
           RailVision shop
         </span>
 
         <h1>
-          Explore railway innovation products for
-          homes, schools, and enterprises.
+          Explore railway innovation and
+          STEM project kits for students,
+          schools, and young makers.
         </h1>
 
         <p>
-          Explore RailVision STEM kits, student
-          projects, and enterprise railway
-          technology.
+          Discover railway safety projects,
+          robotics kits, drone learning kits,
+          and enterprise railway technology.
         </p>
       </section>
 
       <section className="section shop-grid">
         {loading
-          ? [1, 2].map((item) => (
+          ? [1, 2, 3].map((item) => (
               <Skeleton
                 className="shop-skeleton"
                 key={item}
@@ -116,87 +150,82 @@ export default function ShopPage() {
                 key={product.id}
               >
                 <div className="badge">
-                  {product.status === "available"
-                    ? "Available"
+                  {product.status ===
+                  "available"
+                    ? product.badge ||
+                      "Available"
                     : "Coming Soon"}
                 </div>
 
                 <ProductVisual
                   label={product.name}
-                  imageUrl={product.imageUrl}
+                  imageUrl={
+                    product.imageUrl
+                  }
                   variant={
-                    product.id.includes("pro")
+                    product.id.includes(
+                      "pro"
+                    )
                       ? "pro"
                       : "kit"
                   }
                 />
 
-                <h2>{product.name}</h2>
+                <h2>
+                  {product.name}
+                </h2>
 
-                <p>{product.summary}</p>
+                <p>
+                  {product.summary}
+                </p>
 
-                {product.status === "available" ? (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 4,
-      margin: "18px 0",
-      textAlign: "center",
-    }}
-  >
-    <span
-      style={{
-        color: "var(--muted)",
-        fontSize: "1rem",
-        textDecoration: "line-through",
-      }}
-    >
-      {formatCurrency(product.price + 500)}
-    </span>
-
-    <strong
-      style={{
-        color: "var(--green)",
-        fontSize: "1.65rem",
-        fontWeight: 900,
-      }}
-    >
-      {formatCurrency(product.price)}
-    </strong>
-  </div>
-) : (
-  <strong className="price">
-    Coming Soon
-  </strong>
-)}
+                {product.status ===
+                "available" ? (
+                  <ProductPrice
+                    product={product}
+                    align="center"
+                  />
+                ) : (
+                  <strong className="price">
+                    Coming Soon
+                  </strong>
+                )}
 
                 <button
                   type="button"
                   className="button secondary"
                   style={{
                     width: "100%",
-                    marginBottom: 12
+                    marginBottom: 12,
                   }}
                   onClick={() =>
-                    setSelectedProduct(product)
+                    setSelectedProduct(
+                      product
+                    )
                   }
                 >
                   View Details
                 </button>
 
-                {product.status === "available" ? (
+                {product.status ===
+                "available" ? (
                   <div className="button-row">
                     <button
                       type="button"
                       className="button secondary"
-                      onClick={() =>
-                        cart.addItem(product)
-                      }
+                      onClick={() => {
+                        cart.addItem(
+                          product
+                        );
+
+                        toast.success(
+                          `${product.name} added to cart.`
+                        );
+                      }}
                     >
-                      <ShoppingCart size={18} />
+                      <ShoppingCart
+                        size={18}
+                      />
                       Add to Cart
                     </button>
 
@@ -209,7 +238,10 @@ export default function ShopPage() {
                   <form
                     className="notify-form"
                     onSubmit={(event) =>
-                      notify(event, product.id)
+                      notify(
+                        event,
+                        product.id
+                      )
                     }
                   >
                     <input
@@ -220,10 +252,15 @@ export default function ShopPage() {
                     />
 
                     <button
+                      type="submit"
                       className="button primary"
-                      disabled={notifyLoading}
+                      disabled={
+                        notifyLoading
+                      }
                     >
-                      <BellRing size={18} />
+                      <BellRing
+                        size={18}
+                      />
 
                       {notifyLoading
                         ? "Saving..."
@@ -237,12 +274,17 @@ export default function ShopPage() {
 
       {selectedProduct ? (
         <ProductDetailsModal
-          product={selectedProduct}
+          product={
+            selectedProduct
+          }
           onClose={() =>
             setSelectedProduct(null)
           }
           onAddToCart={() => {
-            cart.addItem(selectedProduct);
+            cart.addItem(
+              selectedProduct
+            );
+
             toast.success(
               `${selectedProduct.name} added to cart.`
             );
@@ -250,6 +292,65 @@ export default function ShopPage() {
         />
       ) : null}
     </>
+  );
+}
+
+type ProductPriceProps = {
+  product: Product;
+  align?:
+    | "center"
+    | "flex-start";
+};
+
+function ProductPrice({
+  product,
+  align = "center",
+}: ProductPriceProps) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: align,
+        justifyContent: "center",
+        gap: 4,
+        margin: "18px 0",
+        textAlign:
+          align === "center"
+            ? "center"
+            : "left",
+      }}
+    >
+      {product.originalPrice >
+      product.price ? (
+        <span
+          style={{
+            color:
+              "var(--muted)",
+            fontSize: "1rem",
+            textDecoration:
+              "line-through",
+          }}
+        >
+          {formatCurrency(
+            product.originalPrice
+          )}
+        </span>
+      ) : null}
+
+      <strong
+        style={{
+          color:
+            "var(--green)",
+          fontSize: "1.65rem",
+          fontWeight: 900,
+        }}
+      >
+        {formatCurrency(
+          product.price
+        )}
+      </strong>
+    </div>
   );
 }
 
@@ -262,7 +363,7 @@ type ProductDetailsModalProps = {
 function ProductDetailsModal({
   product,
   onClose,
-  onAddToCart
+  onAddToCart,
 }: ProductDetailsModalProps) {
   return (
     <div
@@ -275,8 +376,10 @@ function ProductDetailsModal({
         display: "grid",
         placeItems: "center",
         padding: 18,
-        background: "rgba(0, 0, 0, 0.78)",
-        backdropFilter: "blur(10px)"
+        background:
+          "rgba(0, 0, 0, 0.78)",
+        backdropFilter:
+          "blur(10px)",
       }}
     >
       <section
@@ -289,10 +392,11 @@ function ProductDetailsModal({
         }
         style={{
           position: "relative",
-          width: "min(920px, 100%)",
+          width:
+            "min(920px, 100%)",
           maxHeight: "90vh",
           overflowY: "auto",
-          padding: 28
+          padding: 28,
         }}
       >
         <button
@@ -304,26 +408,30 @@ function ProductDetailsModal({
             position: "absolute",
             top: 16,
             right: 16,
-            zIndex: 2
+            zIndex: 2,
           }}
         >
           <X size={20} />
         </button>
-        
+
         <div
           style={{
             display: "grid",
             gridTemplateColumns:
-              "minmax(240px, 0.8fr) minmax(0, 1.2fr)",
+              "repeat(auto-fit, minmax(260px, 1fr))",
             gap: 28,
-            alignItems: "start"
+            alignItems: "start",
           }}
         >
           <ProductVisual
             label={product.name}
-            imageUrl={product.imageUrl}
+            imageUrl={
+              product.imageUrl
+            }
             variant={
-              product.id.includes("pro")
+              product.id.includes(
+                "pro"
+              )
                 ? "pro"
                 : "kit"
             }
@@ -340,27 +448,39 @@ function ProductDetailsModal({
               {product.name}
             </h2>
 
-            <p>{product.description}</p>
+            <p>
+              {product.description}
+            </p>
 
-            <strong
-              className="price"
-              style={{
-                display: "block",
-                marginBottom: 22
-              }}
-            >
-              {product.status === "available"
-                ? formatCurrency(product.price)
-                : "Coming Soon"}
-            </strong>
+            {product.status ===
+            "available" ? (
+              <ProductPrice
+                product={product}
+                align="flex-start"
+              />
+            ) : (
+              <strong
+                className="price"
+                style={{
+                  display: "block",
+                  marginBottom: 22,
+                }}
+              >
+                Coming Soon
+              </strong>
+            )}
 
-            <h3>Key Features</h3>
+            <h3>
+              Key Features
+            </h3>
 
             <ul className="check-list">
               {product.features.map(
                 (feature) => (
                   <li key={feature}>
-                    <CheckCircle2 size={18} />
+                    <CheckCircle2
+                      size={18}
+                    />
                     {feature}
                   </li>
                 )
@@ -372,41 +492,87 @@ function ProductDetailsModal({
         <hr
           style={{
             margin: "28px 0",
-            borderColor: "var(--line)"
+            borderColor:
+              "var(--line)",
           }}
         />
 
-        <h3>Materials Included</h3>
+        <h3>
+          Materials Included
+        </h3>
 
         <ul className="check-list">
           {product.materialsIncluded.map(
             (material) => (
               <li key={material}>
-                <CheckCircle2 size={18} />
+                <CheckCircle2
+                  size={18}
+                />
                 {material}
               </li>
             )
           )}
         </ul>
 
+        {!product.codAvailable &&
+        product.status ===
+          "available" ? (
+          <div
+            style={{
+              marginTop: 22,
+              padding: 18,
+              border:
+                "1px solid rgba(246, 184, 75, 0.36)",
+              borderRadius: 8,
+              background:
+                "rgba(246, 184, 75, 0.07)",
+            }}
+          >
+            <h3
+              style={{
+                color:
+                  "var(--amber)",
+              }}
+            >
+              Prepaid Orders Only
+            </h3>
+
+            <p
+              style={{
+                marginBottom: 0,
+              }}
+            >
+              Cash on Delivery is not
+              available for this product.
+              Advance payment is required
+              before the order is prepared.
+            </p>
+          </div>
+        ) : null}
+
         <div
           className="panel"
           style={{
             marginTop: 26,
-            boxShadow: "none"
+            boxShadow: "none",
           }}
         >
           <FileText size={26} />
 
-          <h3 style={{ marginTop: 12 }}>
+          <h3
+            style={{
+              marginTop: 12,
+            }}
+          >
             Tutorials and PDF Support
           </h3>
 
           <p>
-            For tutorial videos, circuit diagrams,
-            source code, assembly instructions, or
-            project PDFs, contact RailVision Support
-            after placing your order. Include your
+            For tutorial videos, circuit
+            diagrams, source code, assembly
+            instructions, or project PDFs,
+            contact RailVision Support after
+            placing your order. Include your
             order ID when contacting support.
           </p>
         </div>
@@ -419,36 +585,51 @@ function ProductDetailsModal({
               "1px solid rgba(246, 184, 75, 0.36)",
             borderRadius: 8,
             background:
-              "rgba(246, 184, 75, 0.07)"
+              "rgba(246, 184, 75, 0.07)",
           }}
         >
           <h3
             style={{
-              color: "var(--amber)"
+              color:
+                "var(--amber)",
             }}
           >
             Product Disclaimer
           </h3>
 
-          <p style={{ marginBottom: 0 }}>
-            Product packaging, component colours,
-            brands, shapes, and arrangement may be
-            different from those shown in the product
-            images. Equivalent compatible components
-            may be supplied depending on availability,
+          <p
+            style={{
+              marginBottom: 0,
+            }}
+          >
+            Product packaging, component
+            colours, brands, shapes, and
+            arrangement may differ from
+            those shown in the product
+            images. Equivalent compatible
+            components may be supplied
+            depending on availability,
             without affecting the intended
             functionality of the product.
           </p>
         </div>
 
-        {product.status === "available" ? (
-          <div className="button-row">
+        {product.status ===
+        "available" ? (
+          <div
+            className="button-row"
+            style={{
+              marginTop: 24,
+            }}
+          >
             <button
               type="button"
               className="button secondary"
               onClick={onAddToCart}
             >
-              <ShoppingCart size={18} />
+              <ShoppingCart
+                size={18}
+              />
               Add to Cart
             </button>
 
@@ -460,7 +641,5 @@ function ProductDetailsModal({
         ) : null}
       </section>
     </div>
-    
   );
-  
 }

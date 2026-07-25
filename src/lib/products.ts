@@ -2,7 +2,13 @@ export type Product = {
   id: string;
   name: string;
   slug: string;
+
+  // Current selling price
   price: number;
+
+  // Struck-through price
+  originalPrice: number;
+
   status: "available" | "coming-soon";
   imageUrl?: string;
   badge?: string;
@@ -10,7 +16,7 @@ export type Product = {
   description: string;
   features: string[];
   materialsIncluded: string[];
-codAvailable: boolean;
+  codAvailable: boolean;
 };
 
 export const products: Product[] = [
@@ -18,198 +24,258 @@ export const products: Product[] = [
     id: "railvision-junior",
     name: "RailVision Junior",
     slug: "railvision-junior",
-    price: 8999,
+
+    price: 6499,
+    originalPrice: 7999,
+
     imageUrl: "/railvision-junior.png",
     status: "available",
-    badge: "STEM Kit",
+    badge: "Railway STEM Kit",
     codAvailable: false,
+
     summary:
-      "A hands-on railway innovation kit for children to learn engineering, AI thinking, sensors, safety, and systems design.",
+      "A hands-on railway innovation kit that helps students learn railway safety, electronics, sensors, automation and engineering through practical experimentation.",
+
     description:
-      "RailVision Junior is a complete STEM railway learning kit that introduces children to railway engineering, AI concepts, railway safety, inspection systems and problem-solving through interactive activities and practical learning.",
+      "RailVision Junior is an advanced railway STEM learning kit designed for students, science exhibitions and innovation competitions. It introduces railway engineering, sensor-based safety systems, automation and practical problem-solving through a complete working railway model.",
+
     features: [
-      "Buildable track and inspection modules",
-      "AI and safety challenge cards",
-      "Sensor-inspired learning activities",
-      "Parent and educator friendly guide"
+      "Complete working railway STEM model",
+      "Sensor-based railway safety concepts",
+      "Hands-on electronics and automation learning",
+      "Suitable for science exhibitions",
+      "Designed for STEM and engineering education",
+      "Beginner-friendly project explanation",
+      "Ideal for school innovation competitions",
+      "Practical railway safety demonstration"
     ],
+
     materialsIncluded: [
       "Railway track components",
       "Mini train model",
-      "Electronic components",
+      "Electronic control components",
       "Sensors",
       "Connecting wires",
-      "Activity cards",
-      "Instruction guide",
-      "RailVision stickers"
+      "Power supply components",
+      "Project explanation guide",
+      "RailVision support access"
     ]
   },
 
   {
-    id: "object-detection-train",
-    name: "Object Detection Train",
-    slug: "object-detection-train",
-    price: 3499,
-    imageUrl: "/object-detection-train.png",
+    id: "automatic-railway-gate-control-system",
+    name: "Automatic Railway Gate Control System",
+    slug: "automatic-railway-gate-control-system",
+
+    price: 2999,
+    originalPrice: 3999,
+
+    imageUrl: "/automatic-railway-gate-control-system.png",
     status: "available",
-    badge: "Smart Safety Kit",
+    badge: "Science Exhibition Project",
     codAvailable: false,
-    summary:
-      "An intelligent railway model that detects another train or obstacle ahead and automatically stops to prevent collisions.",
-    description:
-      "This railway safety project demonstrates automatic collision prevention using infrared sensors and Arduino. Perfect for school projects and STEM learning.",
-    features: [
-      "Automatic object detection",
-      "Collision prevention system",
-      "Infrared sensor technology",
-      "Arduino Nano powered",
-      "Automatic stop & restart",
-      "Perfect STEM learning project"
-    ],
-    materialsIncluded: [
-      "Arduino Nano",
-      "IR Sensors",
-      "Mini train",
-      "DC motor",
-      "Battery holder",
-      "Relay module",
-      "Connecting wires",
-      "Instruction guide"
-    ]
-  },
 
-  {
-    id: "railvision-inventor-kit",
-    name: "RailVision Inventor Kit",
-    slug: "railvision-inventor-kit",
-    price: 599,
-    imageUrl: "/railvision-inventor-kit.png",
-    status: "available",
-    badge: "Best Seller",
-    codAvailable: true,
     summary:
-      "A beginner-friendly electronics learning kit packed with essential components for building exciting circuits and STEM projects.",
+      "A fully working automatic railway gate project that uses sensors and a motor to open and close the gate when a train is detected.",
+
     description:
-      "The RailVision Inventor Kit is specially designed for beginners to learn electronics through practical experiments. It helps students understand circuits, LEDs, sensors, motors and basic electronics without any prior experience.",
+      "The Automatic Railway Gate Control System is an educational railway safety project that demonstrates how automation can improve safety at railway crossings. When a train is detected, the project automatically operates the gate using a sensor-based motor control system. It is ideal for school exhibitions, Inspire Award projects, STEM learning and innovation competitions.",
+
     features: [
-      "400-point breadboard included",
-      "Jumper wires & assorted LEDs",
-      "Resistors, buttons & potentiometer",
-      "Buzzer, RGB LED & LDR sensor",
-      "Mini DC motor included",
-      "Printed beginner guide",
-      "QR code with video tutorials",
-      "Reusable component storage box"
+      "Automatic railway gate opening and closing",
+      "Sensor-based train detection",
+      "Motor-controlled gate mechanism",
+      "Working railway crossing demonstration",
+      "Battery or DC-powered operation",
+      "Suitable for middle and high school students",
+      "Ideal for Inspire Award projects",
+      "Ready-made working science project",
+      "Easy to demonstrate and explain"
     ],
+
     materialsIncluded: [
-      "400-point Breadboard",
-      "Jumper wire pack",
-      "20 Assorted LEDs",
-      "40 Assorted resistors",
-      "5 Push buttons",
-      "10K Potentiometer",
-      "Active buzzer",
-      "LDR sensor",
-      "RGB LED",
-      "Mini DC Motor",
-      "Battery clip",
-      "Storage box"
+      "Railway gate structure",
+      "Railway track model",
+      "Mini train model",
+      "Sensor module",
+      "Motor mechanism",
+      "Control circuit",
+      "Connecting wires",
+      "Power supply components",
+      "Project explanation support"
     ]
   },
   {
-  id: "railvision-science-explorer-kit",
-  name: "RailVision Science Explorer Kit",
-  slug: "railvision-science-explorer-kit",
-  price: 499,
-  imageUrl: "/railvision-science-explorer-kit.png",
+  id: "train-accident-prevention-system",
+  name: "Train Accident Prevention System",
+  slug: "train-accident-prevention-system",
+
+  price: 2699,
+  originalPrice: 4999,
+
+  imageUrl: "/train-accident-prevention-system.png",
   status: "available",
-  badge: "Value Pack",
-  codAvailable: true,
+  badge: "Science Exhibition Project",
+  codAvailable: false,
+
   summary:
-    "An all-in-one beginner science project kit with motors, LEDs, switches, a solar panel, water pump and other essential components for creative school projects.",
+    "An Arduino-based railway safety project that detects obstacles on railway tracks using an ultrasonic sensor to help prevent train collisions.",
+
   description:
-    "The RailVision Science Explorer Kit is designed for students who want to build exciting working science models and understand the basics of electricity, renewable energy, motors and electronic circuits. With a wide variety of ready-to-use components, students can create solar-powered models, water pump projects, LED circuits, alarms, fans and many other school science exhibition projects.",
+    "The Train Accident Prevention System using Ultrasonic Sensor is an Arduino-based science project that demonstrates smart railway safety through real-time obstacle detection. When an obstacle is detected on the track, the system activates alerts and can be programmed to stop the train, showcasing practical applications of automation, sensors, and embedded systems. It is ideal for science exhibitions, engineering projects, STEM education, and innovation competitions.",
+
   features: [
-    "Complete beginner-friendly science project kit",
-    "Solar panel for renewable energy experiments",
-    "Mini water pump with connecting pipe",
-    "Multiple DC motors and fan blades",
-    "Assorted coloured LEDs and resistors",
-    "Different switches for circuit control",
-    "Buzzer and high-brightness torch LED",
-    "Battery holders and power connectors included",
+    "Arduino UNO based controller",
+    "HC-SR04 ultrasonic obstacle detection",
+    "Real-time railway safety demonstration",
+    "Automatic collision prevention concept",
+    "LED and buzzer alert system",
     "Ideal for school science exhibitions",
-    "Suitable for students, beginners and young inventors",
-    "Build multiple reusable working models",
-    "Convenient reusable storage and packing box"
+    "Perfect for engineering and STEM learning",
+    "Easy to understand and explain",
+    "Working railway automation project"
   ],
+
   materialsIncluded: [
-    "1 Mini Solar Panel",
-    "1 Mini Water Pump",
-    "1 Transparent Water Pipe Roll",
-    "1 Standard DC Motor",
-    "1 Mini Toy DC Motor",
-    "1 Pink Three-Blade Fan",
-    "1 Purple Fan Blade",
-    "2 AA Batteries",
-    "1 Two-Cell AA Battery Holder",
-    "1 9V Battery",
-    "1 9V Battery Connector Clip",
-    "Assorted Connecting Wires",
-    "5 Red LEDs",
-    "5 Green LEDs",
-    "5 Yellow LEDs",
-    "5 Blue LEDs",
-    "Assorted Multicolour LEDs",
-    "Assorted Resistors",
-    "3 Rocker Switches",
-    "1 Round Rocker Switch",
-    "1 Push Button Switch",
-    "1 Slide Switch",
-    "1 High-Brightness Torch LED Module",
-    "1 Electronic Buzzer",
-    "2 Wire Connectors",
-    "Assorted Screws, Nuts and Washers",
-    "1 Roll of Double-Sided Tape",
-    "1 Reusable Project Storage Box"
+    "Arduino UNO",
+    "HC-SR04 Ultrasonic Sensor",
+    "Mini Train Model",
+    "Railway Track",
+    "LED Indicators",
+    "Buzzer",
+    "Connecting Wires",
+    "Power Supply Components",
+    "Project Guide & Support"
   ]
 },
   {
-    id: "railvision-traffic-signal-kit",
-    name: "RailVision Traffic Signal Project Kit",
-    slug: "railvision-traffic-signal-kit",
-    price: 899,
-    imageUrl: "/railvision-traffic-signal-kit.png",
+    id: "combined-train-platform-accident-prevention",
+    name: "Combined Train & Platform Accident Prevention",
+    slug: "combined-train-platform-accident-prevention",
+
+    price: 8999,
+    originalPrice: 9999,
+
+    imageUrl: "/combined-train-platform-accident-prevention.png",
     status: "available",
-    badge: "School Project",
-    codAvailable: true,
+    badge: "Advanced Railway Safety Project",
+    codAvailable: false,
+
     summary:
-      "A complete Arduino-based traffic signal project kit perfect for science exhibitions, STEM learning, and beginner programming.",
+      "An advanced railway safety project combining train accident prevention and platform safety systems in one working model.",
+
     description:
-      "Build a fully functional traffic signal system using Arduino. This kit is ideal for school exhibitions, engineering beginners and anyone interested in embedded electronics.",
+      "The Combined Train and Platform Accident Prevention Project demonstrates how sensor-based systems can improve passenger and railway safety. It combines multiple safety concepts in one model, making it suitable for major science exhibitions, innovation competitions, Inspire Award projects and advanced STEM demonstrations.",
+
     features: [
-      "Arduino Nano compatible board",
-      "Complete traffic light circuit",
-      "Breadboard & jumper wires",
-      "Red, yellow & green LEDs",
-      "USB programming cable",
-      "Circuit diagram included",
-      "Arduino source code provided",
-      "Project report template"
+      "Combined railway and platform safety system",
+      "Train accident prevention demonstration",
+      "Platform safety monitoring concept",
+      "Sensor-based automatic operation",
+      "Advanced working railway model",
+      "Suitable for major science exhibitions",
+      "Ideal for innovation competitions",
+      "Practical railway safety explanation",
+      "Designed for STEM and engineering learning"
     ],
+
     materialsIncluded: [
-      "Arduino Nano",
-      "USB Cable",
-      "Breadboard",
-      "Jumper wire pack",
-      "3 Red LEDs",
-      "3 Yellow LEDs",
-      "3 Green LEDs",
-      "220Ω Resistors",
-      "Push Button",
-      "Circuit Diagram",
-      "Project Report",
-      "RailVision Sticker"
+      "Railway track model",
+      "Mini train model",
+      "Platform model",
+      "Safety sensor modules",
+      "Electronic control components",
+      "Motor and movement components",
+      "Connecting wires",
+      "Power supply components",
+      "Project explanation support"
+    ]
+  },
+
+  {
+    id: "wooden-diy-drone-kit",
+    name: "Wooden DIY Drone Kit",
+    slug: "wooden-diy-drone-kit",
+
+    price: 3599,
+    originalPrice: 4099,
+
+    imageUrl: "/wooden-diy-drone-kit.png",
+    status: "available",
+    badge: "Prepaid Orders Only",
+    codAvailable: false,
+
+    summary:
+      "A lightweight laser-cut wooden quadcopter frame kit designed for drone learning, STEM education and hands-on DIY projects.",
+
+    description:
+      "The Wooden DIY Drone Kit is an educational quadcopter frame designed for students and hobbyists to learn drone building and aerodynamics. Its lightweight laser-cut wooden structure is easy to assemble and compatible with commonly used drone components such as BLDC motors, ESCs and flight controllers. This product includes the wooden frame kit only; electronic drone components are not included.",
+
+    features: [
+      "Laser-cut wooden quadcopter frame",
+      "DIY self-assembly design",
+      "Lightweight wooden structure",
+      "Suitable for drone learning",
+      "Useful for STEM education",
+      "Compatible with common drone components",
+      "Ideal for students and robotics learners",
+      "Suitable for DIY electronics projects",
+      "Prepaid orders only"
+    ],
+
+    materialsIncluded: [
+      "Laser-cut wooden drone frame parts",
+      "Wooden quadcopter arms",
+      "Central frame plates",
+      "Motor mounting sections",
+      "Assembly hardware",
+      "Assembly guide"
+    ]
+  },
+
+  {
+    id: "obstacle-avoiding-robot",
+    name: "Obstacle Avoiding Robot",
+    slug: "obstacle-avoiding-robot",
+
+    price: 4499,
+    originalPrice: 6999,
+
+    imageUrl: "/obstacle-avoiding-robot.png",
+    status: "available",
+    badge: "Arduino Robotics Kit",
+    codAvailable: false,
+
+    summary:
+      "An Arduino-based smart robot that detects obstacles using an ultrasonic sensor and automatically changes direction to avoid collisions.",
+
+    description:
+      "The Obstacle Avoiding Robot is an Arduino-based smart robotics project that detects obstacles in its path and automatically changes direction. It uses an HC-SR04 ultrasonic sensor to measure distance and an L293D motor driver to control the N20 DC gear motors. The project demonstrates robotics, sensors, automation and basic intelligent decision-making, making it suitable for school exhibitions, STEM education and engineering students.",
+
+    features: [
+      "Automatic obstacle detection",
+      "Automatic collision avoidance",
+      "Arduino UNO controlled",
+      "HC-SR04 ultrasonic sensor",
+      "L293D motor driver module",
+      "N20 DC gear motors",
+      "Battery-powered operation",
+      "Demonstrates robotics and automation",
+      "Suitable for school exhibitions",
+      "Ideal for STEM and engineering learning"
+    ],
+
+    materialsIncluded: [
+      "Arduino UNO",
+      "HC-SR04 ultrasonic sensor",
+      "L293D motor driver module",
+      "N20 DC gear motors",
+      "Robot wheels",
+      "Robot chassis",
+      "Battery holder",
+      "Connecting wires",
+      "Mounting hardware",
+      "Project explanation support"
     ]
   },
 
@@ -217,26 +283,34 @@ export const products: Product[] = [
     id: "railvision-pro",
     name: "RailVision Pro",
     slug: "railvision-pro",
+
     price: 0,
+    originalPrice: 0,
+
     status: "coming-soon",
     badge: "Coming Soon",
     codAvailable: false,
+
     summary:
       "An AI-powered wireless railway health monitoring system that transforms trains into moving inspection units.",
+
     description:
-      "RailVision Pro is our flagship enterprise-grade railway inspection platform that continuously monitors railway tracks using AI-powered onboard inspection technology.",
+      "RailVision Pro is an enterprise railway inspection platform designed to continuously monitor railway tracks using AI-powered train-mounted inspection technology.",
+
     features: [
-      "AI defect detection",
-      "GPS-linked alerts",
+      "AI-powered defect detection",
+      "GPS-linked railway alerts",
       "Predictive maintenance workflows",
-      "Wireless train-mounted deployment"
+      "Wireless train-mounted deployment",
+      "Continuous railway track monitoring"
     ],
+
     materialsIncluded: [
-      "Enterprise hardware",
+      "Enterprise inspection hardware",
       "Wireless sensor modules",
-      "AI inspection unit",
-      "Cloud dashboard",
-      "Installation support"
+      "AI processing unit",
+      "Monitoring dashboard",
+      "Installation and technical support"
     ]
   }
 ];
@@ -251,6 +325,8 @@ export function formatCurrency(value: number) {
 
 export function getProduct(id: string) {
   return products.find(
-    (product) => product.id === id || product.slug === id
+    (product) =>
+      product.id === id ||
+      product.slug === id
   );
 }
