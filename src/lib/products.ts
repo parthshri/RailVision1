@@ -67,7 +67,7 @@ export const products: Product[] = [
     name: "Automatic Railway Gate Control System",
     slug: "automatic-railway-gate-control-system",
 
-    price: 2999,
+    price: 3249,
     originalPrice: 3999,
 
     imageUrl: "/automatic-railway-gate-control-system.png",
@@ -110,8 +110,8 @@ export const products: Product[] = [
   name: "Train Accident Prevention System",
   slug: "train-accident-prevention-system",
 
-  price: 2699,
-  originalPrice: 4999,
+  price: 2999,
+  originalPrice: 3999,
 
   imageUrl: "/train-accident-prevention-system.png",
   status: "available",
@@ -197,7 +197,7 @@ export const products: Product[] = [
     name: "Wooden DIY Drone Kit",
     slug: "wooden-diy-drone-kit",
 
-    price: 3599,
+    price: 3249,
     originalPrice: 4099,
 
     imageUrl: "/wooden-diy-drone-kit.png",
