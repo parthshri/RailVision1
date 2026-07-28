@@ -290,7 +290,7 @@ export const products: Product[] = [
     status: "coming-soon",
     badge: "Coming Soon",
     codAvailable: false,
-
+    imageUrl: "/railvision-pro.png",
     summary:
       "An AI-powered wireless railway health monitoring system that transforms trains into moving inspection units.",
 

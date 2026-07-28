@@ -56,7 +56,11 @@ export default function HomePage() {
         <div className="product-grid">
           <article className="product-card featured">
             <div className="badge">Coming Soon</div>
-            <ProductVisual label="RailVision Pro" variant="pro" />
+            <ProductVisual
+  label="RailVision Pro"
+  imageUrl="/railvision-pro.png"
+  variant="pro"
+/>
             <h3>RailVision Pro</h3>
             <p>
               AI-powered wireless railway health monitoring that transforms trains into
