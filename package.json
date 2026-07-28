@@ -10,6 +10,7 @@
     "set-admin": "node scripts/setAdminClaim.mjs"
   },
   "dependencies": {
+    "@next/third-parties": "^16.2.12",
     "firebase": "^11.0.2",
     "firebase-admin": "^13.0.1",
     "framer-motion": "^11.11.17",
