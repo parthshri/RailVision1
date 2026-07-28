@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { Providers } from "@/components/Providers";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -58,7 +59,7 @@ export default function RootLayout({
           `}
         </Script>
 
-        
+        <GoogleAnalytics gaId="G-W53D79RZPB" />
       </body>
     </html>
   );
