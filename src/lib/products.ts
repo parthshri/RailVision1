@@ -278,6 +278,174 @@ export const products: Product[] = [
       "Project explanation support"
     ]
   },
+  {
+  id: "wireless-power-transfer-system",
+  name: "Wireless Power Transfer DIY Project Kit",
+  slug: "wireless-power-transfer-system",
+
+  price: 649,
+  originalPrice: 999,
+
+  imageUrl: "/wireless-power-transfer-system.png",
+  status: "available",
+  badge: "COD Available",
+  codAvailable: true,
+
+  summary:
+    "An educational DIY kit that demonstrates wireless electricity transmission using electromagnetic induction for STEM learning and science projects.",
+
+  description:
+    "The Wireless Power Transfer DIY Project Kit demonstrates how electrical energy can be transferred without a direct wired connection using electromagnetic induction. The system consists of a transmitter and receiver coil that wirelessly powers an LED or other small compatible load when correctly aligned. Designed for students, hobbyists and STEM learners, this project provides hands-on experience with wireless energy transfer, inductive coupling and basic electronics.",
+
+  features: [
+    "Demonstrates wireless electricity transmission",
+    "Based on electromagnetic induction",
+    "Wireless LED power demonstration",
+    "DIY learning project",
+    "Ideal for STEM education",
+    "Suitable for science exhibitions",
+    "Easy to understand working principle",
+    "Perfect for electronics learners",
+    "Prepaid orders only"
+  ],
+
+  materialsIncluded: [
+    "Wireless transmitter coil",
+    "Wireless receiver coil",
+    "Power transfer circuit board",
+    "LED indicator",
+    "Connecting wires",
+    "Assembly guide"
+  ]
+},
+{
+  id: "voice-control-ai-robot",
+  name: "Voice Control AI Robot - Personal Assistant",
+  slug: "voice-control-ai-robot",
+
+  price: 7599,
+  originalPrice: 9999,
+
+  imageUrl: "/voice-control-ai-robot.png",
+  status: "available",
+  badge: "New Arrival",
+  codAvailable: true,
+
+  summary:
+    "A smart Arduino and IoT based robotics kit that responds to voice commands and demonstrates AI, automation and robotics concepts.",
+
+  description:
+    "The Voice Control AI Robot Personal Assistant is a complete robotics learning kit that combines Arduino, voice recognition, IoT connectivity and robotic movement into a single educational project. The robot responds to configured voice commands, performs movement, interacts with users and demonstrates smart automation concepts. Designed for advanced STEM learning, robotics enthusiasts and engineering students, this project introduces AI, IoT and embedded systems through practical hands-on learning.",
+
+  features: [
+    "Voice-controlled robot",
+    "Arduino based controller",
+    "Bluetooth and Wi-Fi connectivity",
+    "AI and IoT learning project",
+    "Supports robotic movement",
+    "Wi-Fi camera integration",
+    "Ideal for robotics competitions",
+    "Perfect for engineering projects",
+    "Full working project kit"
+  ],
+
+  materialsIncluded: [
+    "Arduino controller",
+    "Robot chassis",
+    "N20 DC motors",
+    "Motor driver",
+    "Voice control module",
+    "Wi-Fi camera",
+    "Speaker",
+    "Battery holder",
+    "Connecting wires",
+    "Required electronics components"
+  ]
+},
+{
+  id: "smart-walking-shoes-blind",
+  name: "Smart Walking Shoes for Blind",
+  slug: "smart-walking-shoes-blind",
+
+  price: 2799,
+  originalPrice: 4500,
+
+  imageUrl: "/smart-walking-shoes-blind.png",
+  status: "available",
+  badge: "Best Seller",
+  codAvailable: true,
+
+  summary:
+    "An Arduino-based assistive technology project that detects nearby obstacles using ultrasonic sensors and alerts the user through buzzer or vibration.",
+
+  description:
+    "The Smart Walking Shoes for Blind project is an educational assistive technology kit designed to demonstrate obstacle detection using ultrasonic sensors and Arduino. The system continuously measures the distance to nearby objects and provides alerts through a buzzer or vibration when obstacles are detected. This project introduces students to wearable electronics, sensors, Arduino programming and real-world engineering applications while promoting innovation in assistive technology.",
+
+  features: [
+    "Ultrasonic obstacle detection",
+    "Arduino Nano based project",
+    "Buzzer or vibration alert",
+    "Wearable electronics demonstration",
+    "Assistive technology project",
+    "Ideal for STEM learning",
+    "Suitable for science exhibitions",
+    "Easy to assemble and program",
+    "Full working project kit"
+  ],
+
+  materialsIncluded: [
+    "Arduino Nano",
+    "Ultrasonic sensor",
+    "Buzzer or vibration module",
+    "Battery",
+    "Connecting wires",
+    "Shoe platform",
+    "Required electronic components",
+    "Project documentation"
+  ]
+},
+{
+  id: "train-platform-accident-prevention-system",
+  name: "Train Platform Accident Prevention System",
+  slug: "train-platform-accident-prevention-system",
+
+  price: 2999,
+  originalPrice: 4999,
+
+  imageUrl: "/train-platform-accident-prevention-system.png",
+  status: "available",
+  badge: "RailVision Original",
+  codAvailable: true,
+
+  summary:
+    "A railway safety science project that demonstrates automatic platform accident prevention using sensors and smart detection technology.",
+
+  description:
+    "The Train Platform Accident Prevention System is an educational railway safety project developed to demonstrate how sensors and automated control systems can help reduce accidents near railway platforms. The project detects potentially unsafe situations and activates warning or preventive mechanisms to improve passenger safety. It is designed for STEM learning, railway technology demonstrations, science exhibitions and engineering projects while introducing students to automation, sensors and embedded systems.",
+
+  features: [
+    "Railway safety demonstration",
+    "Automatic accident prevention concept",
+    "Sensor-based detection system",
+    "Real-world engineering application",
+    "STEM learning project",
+    "Suitable for science exhibitions",
+    "Ideal for railway technology learning",
+    "Hands-on electronics project",
+    "Full working demonstration model"
+  ],
+
+  materialsIncluded: [
+    "Controller board",
+    "Safety sensors",
+    "Warning indicator modules",
+    "Power supply components",
+    "Connecting wires",
+    "Project structure",
+    "Required electronic components",
+    "Assembly guide"
+  ]
+},
 
   {
     id: "railvision-pro",

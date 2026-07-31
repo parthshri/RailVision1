@@ -9,6 +9,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -562,11 +563,193 @@ export type AffiliateDashboardData = {
   commissionRate: number;
 
   totalReferredOrders: number;
+
+  /**
+   * Successful affiliate orders completed during
+   * the current Monday-Sunday week in India time.
+   */
+  weeklyReferredOrders: number;
+
   pendingCommission: number;
   approvedCommission: number;
   paidCommission: number;
   remainingPayableAmount: number;
 };
+
+/**
+ * RailVision affiliate bonus weeks run from:
+ *
+ * Monday 12:00 AM IST
+ * through
+ * Sunday 11:59:59 PM IST
+ */
+function getCurrentAffiliateWeekRange() {
+  const IST_OFFSET_MINUTES = 330;
+  const IST_OFFSET_MS =
+    IST_OFFSET_MINUTES * 60 * 1000;
+
+  const now = new Date();
+
+  /*
+   * Shift the current instant into an artificial
+   * UTC date whose UTC fields represent IST.
+   */
+  const nowInIndia = new Date(
+    now.getTime() + IST_OFFSET_MS
+  );
+
+  const currentDay =
+    nowInIndia.getUTCDay();
+
+  /*
+   * JavaScript:
+   * Sunday = 0
+   * Monday = 1
+   *
+   * Convert this into the number of days
+   * passed since Monday.
+   */
+  const daysSinceMonday =
+    (currentDay + 6) % 7;
+
+  const weekStartAsIndiaWallTime =
+    Date.UTC(
+      nowInIndia.getUTCFullYear(),
+      nowInIndia.getUTCMonth(),
+      nowInIndia.getUTCDate() -
+        daysSinceMonday,
+      0,
+      0,
+      0,
+      0
+    );
+
+  /*
+   * Convert Monday 12:00 AM IST back into
+   * the real UTC instant stored by Firestore.
+   */
+  const weekStart = new Date(
+    weekStartAsIndiaWallTime -
+      IST_OFFSET_MS
+  );
+
+  const weekEnd = new Date(
+    weekStart.getTime() +
+      7 * 24 * 60 * 60 * 1000
+  );
+
+  return {
+    weekStart,
+    weekEnd,
+  };
+}
+
+/**
+ * Safely converts Firestore Timestamp,
+ * JavaScript Date, ISO strings and millisecond
+ * numbers into a JavaScript Date.
+ */
+function convertToDate(
+  value: unknown
+): Date | null {
+  if (value instanceof Timestamp) {
+    return value.toDate();
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime())
+      ? null
+      : value;
+  }
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number"
+  ) {
+    const convertedDate = new Date(value);
+
+    return Number.isNaN(
+      convertedDate.getTime()
+    )
+      ? null
+      : convertedDate;
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value
+  ) {
+    const timestampLike = value as {
+      toDate?: unknown;
+    };
+
+    if (
+      typeof timestampLike.toDate ===
+      "function"
+    ) {
+      const convertedDate =
+        timestampLike.toDate();
+
+      if (
+        convertedDate instanceof Date &&
+        !Number.isNaN(
+          convertedDate.getTime()
+        )
+      ) {
+        return convertedDate;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Determines whether an order should count
+ * toward the weekly affiliate bonus.
+ *
+ * An order counts when:
+ *
+ * 1. It has not been cancelled.
+ * 2. Its affiliate commission has not been rejected.
+ * 3. It is paid OR delivered.
+ *
+ * This supports both prepaid and COD orders.
+ */
+function isSuccessfulAffiliateOrder(
+  order: Record<string, unknown>
+) {
+  const orderStatus = String(
+    order.orderStatus || ""
+  ).toUpperCase();
+
+  const paymentStatus = String(
+    order.paymentStatus || ""
+  ).toUpperCase();
+
+  const affiliateStatus = String(
+    order.affiliateStatus || ""
+  ).toUpperCase();
+
+  const isCancelled =
+    orderStatus === "CANCELLED";
+
+  const isRejected =
+    affiliateStatus === "REJECTED";
+
+  const isPaid =
+    paymentStatus === "PAID";
+
+  const isDelivered =
+    orderStatus === "DELIVERED";
+
+  return (
+    !isCancelled &&
+    !isRejected &&
+    (isPaid || isDelivered)
+  );
+}
 
 export async function getAffiliateByEmail(
   email: string
@@ -637,6 +820,7 @@ export async function getAffiliateByEmail(
     throw error;
   }
 }
+
 export async function getAffiliateDashboardData(
   email: string
 ): Promise<AffiliateDashboardData | null> {
@@ -665,6 +849,13 @@ export async function getAffiliateDashboardData(
   const ordersSnapshot =
     await getDocs(ordersQuery);
 
+  const {
+    weekStart,
+    weekEnd,
+  } = getCurrentAffiliateWeekRange();
+
+  let weeklyReferredOrders = 0;
+
   let pendingCommission = 0;
   let approvedCommission = 0;
   let paidCommission = 0;
@@ -672,46 +863,111 @@ export async function getAffiliateDashboardData(
   ordersSnapshot.docs.forEach(
     (orderDocument) => {
       const order =
-        orderDocument.data();
+        orderDocument.data() as Record<
+          string,
+          unknown
+        >;
 
-      const commission = Number(
-        order.affiliateCommission || 0
+      const commission = Math.max(
+        0,
+        Number(
+          order.affiliateCommission || 0
+        ) || 0
       );
 
+      const affiliateStatus = String(
+        order.affiliateStatus || "PENDING"
+      ).toUpperCase();
+
+      /*
+       * Calculate commission totals.
+       */
       if (
-        order.affiliateStatus ===
-        "APPROVED"
+        affiliateStatus === "APPROVED"
       ) {
         approvedCommission +=
           commission;
       } else if (
-        order.affiliateStatus ===
-        "PAID"
+        affiliateStatus === "PAID"
       ) {
         paidCommission += commission;
       } else if (
-        order.affiliateStatus !==
-        "REJECTED"
+        affiliateStatus !== "REJECTED"
       ) {
         pendingCommission +=
           commission;
       }
+
+      /*
+       * Calculate the current week's
+       * successful referred sales.
+       */
+      const orderCreatedAt =
+        convertToDate(order.createdAt);
+
+      if (!orderCreatedAt) {
+        console.warn(
+          `Order ${orderDocument.id} has no valid createdAt timestamp and cannot be counted toward the weekly bonus.`
+        );
+
+        return;
+      }
+
+      const isInsideCurrentWeek =
+        orderCreatedAt >= weekStart &&
+        orderCreatedAt < weekEnd;
+
+      if (
+        isInsideCurrentWeek &&
+        isSuccessfulAffiliateOrder(
+          order
+        )
+      ) {
+        weeklyReferredOrders += 1;
+      }
+    }
+  );
+
+  console.log(
+    "Affiliate weekly tracking:",
+    {
+      affiliateCode:
+        affiliate.code,
+      weekStart:
+        weekStart.toISOString(),
+      weekEnd:
+        weekEnd.toISOString(),
+      weeklyReferredOrders,
     }
   );
 
   return {
-    affiliateCode: affiliate.code,
-    affiliateName: affiliate.name,
-    commissionRate:
-      affiliate.commissionRate,
+    affiliateCode:
+      affiliate.code,
+
+    affiliateName:
+      affiliate.name,
+
+    commissionRate: Math.max(
+      0,
+      Number(
+        affiliate.commissionRate
+      ) || 0
+    ),
 
     totalReferredOrders:
       ordersSnapshot.size,
+
+    weeklyReferredOrders,
 
     pendingCommission,
     approvedCommission,
     paidCommission,
 
+    /*
+     * Approved commission is currently
+     * approved but not yet marked as paid.
+     */
     remainingPayableAmount:
       approvedCommission,
   };
