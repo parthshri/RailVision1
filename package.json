@@ -20,7 +20,8 @@
     "razorpay": "^2.9.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hot-toast": "^2.4.1"
+    "react-hot-toast": "^2.4.1",
+    "resend": "^6.18.1"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

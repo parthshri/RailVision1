@@ -820,7 +820,35 @@ export async function getAffiliateByEmail(
     throw error;
   }
 }
+export async function updateOrderEstimatedDelivery(
+  orderId: string,
+  estimatedDelivery: string
+) {
+  if (!db) {
+    throw new Error(
+      "Firebase is not configured yet."
+    );
+  }
 
+  const cleanValue =
+    estimatedDelivery
+      .trim()
+      .slice(0, 100);
+
+  if (!cleanValue) {
+    throw new Error(
+      "Estimated delivery is required."
+    );
+  }
+
+  return updateDoc(
+    doc(db, "orders", orderId),
+    {
+      estimatedDelivery: cleanValue,
+      updatedAt: serverTimestamp(),
+    }
+  );
+}
 export async function getAffiliateDashboardData(
   email: string
 ): Promise<AffiliateDashboardData | null> {

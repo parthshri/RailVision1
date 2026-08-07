@@ -2,50 +2,417 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function signedIn() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return signedIn() && request.auth.uid == userId;
+      return signedIn() &&
+        userId != null &&
+        request.auth.uid == userId;
     }
 
     function isAdmin() {
-      return signedIn() && request.auth.token.admin == true;
+      return signedIn() &&
+        request.auth.token.admin == true;
     }
 
+    /*
+     * CUSTOMER VALIDATION
+     */
+    function validCustomerInfo(customer) {
+      return
+        customer is map &&
+
+        customer.keys().hasAll([
+          "fullName",
+          "email",
+          "phone",
+          "alternatePhone"
+        ]) &&
+
+        customer.keys().hasOnly([
+          "fullName",
+          "email",
+          "phone",
+          "alternatePhone"
+        ]) &&
+
+        customer.fullName is string &&
+        customer.fullName.size() >= 2 &&
+        customer.fullName.size() <= 80 &&
+
+        customer.email is string &&
+        customer.email.size() >= 5 &&
+        customer.email.size() <= 120 &&
+        customer.email.matches(
+          "^[^@ ]+@[^@ ]+\\.[^@ ]+$"
+        ) &&
+
+        customer.phone is string &&
+        customer.phone.matches(
+          "^[6-9][0-9]{9}$"
+        ) &&
+
+        customer.alternatePhone is string &&
+
+        (
+          customer.alternatePhone == "" ||
+          customer.alternatePhone.matches(
+            "^[6-9][0-9]{9}$"
+          )
+        ) &&
+
+        (
+          customer.alternatePhone == "" ||
+          customer.alternatePhone !=
+            customer.phone
+        );
+    }
+
+    /*
+     * SHIPPING ADDRESS VALIDATION
+     */
+    function validShippingAddress(address) {
+      return
+        address is map &&
+
+        address.keys().hasAll([
+          "house",
+          "street",
+          "area",
+          "city",
+          "state",
+          "pinCode",
+          "country"
+        ]) &&
+
+        address.keys().hasOnly([
+          "house",
+          "street",
+          "area",
+          "city",
+          "state",
+          "pinCode",
+          "country"
+        ]) &&
+
+        address.house is string &&
+        address.house.size() >= 1 &&
+        address.house.size() <= 100 &&
+
+        address.street is string &&
+        address.street.size() >= 1 &&
+        address.street.size() <= 150 &&
+
+        address.area is string &&
+        address.area.size() <= 100 &&
+
+        address.city is string &&
+        address.city.size() >= 2 &&
+        address.city.size() <= 80 &&
+
+        address.state is string &&
+        address.state.size() >= 2 &&
+        address.state.size() <= 100 &&
+
+        address.pinCode is string &&
+        address.pinCode.matches(
+          "^[1-9][0-9]{5}$"
+        ) &&
+
+        address.country == "India";
+    }
+
+    /*
+     * PRODUCTS VALIDATION
+     */
+    function validProducts(products) {
+      return
+        products is list &&
+        products.size() > 0 &&
+        products.size() <= 20;
+    }
+
+    /*
+     * PAYMENT VALIDATION
+     */
+    function validPayment(order) {
+      return
+        (
+          order.paymentMethod == "COD" ||
+          order.paymentMethod == "UPI_MANUAL"
+        ) &&
+
+        (
+          (
+            order.paymentMethod == "COD" &&
+            order.paymentStatus == "PENDING"
+          ) ||
+
+          (
+            order.paymentMethod ==
+              "UPI_MANUAL" &&
+
+            order.paymentStatus ==
+              "AWAITING_VERIFICATION" &&
+
+            "transactionReference" in order &&
+
+            order.transactionReference is string &&
+
+            order.transactionReference.size() >= 8 &&
+            order.transactionReference.size() <= 50
+          )
+        );
+    }
+
+    /*
+     * USER / GUEST VALIDATION
+     */
+    function validOrderUser(order) {
+      return
+        (
+          request.auth != null &&
+
+          order.userId ==
+            request.auth.uid &&
+
+          order.isGuestOrder ==
+            false
+        )
+
+        ||
+
+        (
+          request.auth == null &&
+
+          order.userId ==
+            null &&
+
+          order.isGuestOrder ==
+            true &&
+
+          order.accountEmail ==
+            null
+        );
+    }
+
+    /*
+     * ORDER TOTAL VALIDATION
+     */
+    function validOrderTotal(order) {
+      return
+        (
+          order.total is int ||
+          order.total is float
+        ) &&
+
+        order.total > 0 &&
+        order.total <= 500000;
+    }
+
+    /*
+     * AFFILIATE VALIDATION
+     *
+     * Customer can never create an order
+     * with an already approved or paid
+     * affiliate commission.
+     */
+    function validAffiliateData(order) {
+      return
+        (
+          !("affiliateStatus" in order) ||
+          order.affiliateStatus == "PENDING"
+        ) &&
+
+        (
+          !("affiliateCommission" in order) ||
+
+          (
+            (
+              order.affiliateCommission is int ||
+              order.affiliateCommission is float
+            ) &&
+
+            order.affiliateCommission >= 0
+          )
+        );
+    }
+
+    /*
+     * COMPLETE NEW ORDER VALIDATION
+     */
+    function validNewOrder(order) {
+      return
+        order.keys().hasAll([
+          "userId",
+          "isGuestOrder",
+          "accountEmail",
+          "customerInfo",
+          "shippingAddress",
+          "products",
+          "total",
+          "paymentMethod",
+          "paymentStatus",
+          "orderStatus",
+          "createdAt"
+        ]) &&
+
+        order.keys().hasOnly([
+          "userId",
+          "isGuestOrder",
+          "accountEmail",
+
+          "customerInfo",
+          "shippingAddress",
+          "products",
+
+          "total",
+
+          "paymentMethod",
+          "paymentStatus",
+          "transactionReference",
+
+          "orderStatus",
+
+          "affiliateCode",
+          "affiliateName",
+          "affiliateCommission",
+          "affiliateStatus",
+
+          "createdAt",
+          "updatedAt"
+        ]) &&
+
+        validOrderUser(order) &&
+
+        validCustomerInfo(
+          order.customerInfo
+        ) &&
+
+        validShippingAddress(
+          order.shippingAddress
+        ) &&
+
+        validProducts(
+          order.products
+        ) &&
+
+        validOrderTotal(
+          order
+        ) &&
+
+        validPayment(
+          order
+        ) &&
+
+        validAffiliateData(
+          order
+        ) &&
+
+        order.orderStatus ==
+          "PLACED" &&
+
+        order.createdAt ==
+          request.time;
+    }
+
+    /*
+     * PRODUCTS
+     */
     match /products/{productId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    /*
+     * ORDERS
+     */
     match /orders/{orderId} {
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAdmin() || isOwner(resource.data.userId);
-      allow update, delete: if isAdmin();
+
+      /*
+       * Both authenticated customers
+       * and guests can CREATE orders,
+       * but only if validation passes.
+       */
+      allow create:
+        if validNewOrder(
+          request.resource.data
+        );
+
+      /*
+       * Guest orders are NOT publicly
+       * readable.
+       *
+       * Signed-in customers can read
+       * their own orders.
+       *
+       * Admins can read all orders.
+       */
+      allow read:
+        if isAdmin() ||
+        isOwner(
+          resource.data.userId
+        );
+
+      /*
+       * Customers and guests cannot
+       * edit payment/order statuses.
+       */
+      allow update, delete:
+        if isAdmin();
     }
 
+    /*
+     * USERS
+     */
     match /users/{userId} {
-      allow read, update: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
-      allow delete: if isAdmin();
+      allow read, update:
+        if isOwner(userId) ||
+        isAdmin();
+
+      allow create:
+        if isOwner(userId);
+
+      allow delete:
+        if isAdmin();
     }
 
+    /*
+     * CONTACTS
+     */
     match /contacts/{contactId} {
       allow create: if true;
-      allow read, update, delete: if isAdmin();
+
+      allow read, update, delete:
+        if isAdmin();
     }
 
+    /*
+     * PRO INQUIRIES
+     */
     match /proInquiries/{inquiryId} {
       allow create: if true;
-      allow read, update, delete: if isAdmin();
+
+      allow read, update, delete:
+        if isAdmin();
     }
 
+    /*
+     * NOTIFICATION SIGNUPS
+     */
     match /notifications/{notificationId} {
       allow create: if true;
-      allow read, update, delete: if isAdmin();
+
+      allow read, update, delete:
+        if isAdmin();
     }
 
+    /*
+     * DENY EVERYTHING ELSE
+     */
     match /{document=**} {
       allow read, write: if false;
     }

@@ -38,6 +38,10 @@ const links = [
     label: "Shop",
   },
   {
+    href: "/track-order",
+    label: "Track Order",
+  },
+  {
     href: "/affiliate/dashboard",
     label: "Affiliate",
   },
@@ -198,8 +202,11 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+        
 
           {isAdmin ? (
+
+            
             <Link
               href="/admin"
               className={

@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -12,13 +13,21 @@ import {
   Search,
 } from "lucide-react";
 
+import toast from "react-hot-toast";
+
+import {
+  updateOrderEstimatedDelivery,
+} from "@/lib/firestoreActions";
+
 import type {
   AffiliateCommissionStatus,
   OrderStatus,
   PaymentStatus,
 } from "@/lib/firestoreActions";
 
-import { formatCurrency } from "@/lib/products";
+import {
+  formatCurrency,
+} from "@/lib/products";
 
 import type {
   AdminOrder,
@@ -27,22 +36,22 @@ import type {
 type OrderAdminListProps = {
   orders: AdminOrder[];
 
-  onStatusChange: (
+  onStatusChangeAction: (
     orderId: string,
     status: OrderStatus
   ) => Promise<void>;
 
-  onPaymentStatusChange: (
+  onPaymentStatusChangeAction: (
     orderId: string,
     status: PaymentStatus
   ) => Promise<void>;
 
-  onAffiliateStatusChange: (
+  onAffiliateStatusChangeAction: (
     orderId: string,
     status: AffiliateCommissionStatus
   ) => Promise<void>;
 
-  onSelectOrder: (
+  onSelectOrderAction: (
     order: AdminOrder
   ) => void;
 
@@ -67,28 +76,50 @@ type OrderSortOption =
   | "pending-first"
   | "delivered-first";
 
-const INITIAL_VISIBLE_COUNT = 8;
+const INITIAL_VISIBLE_COUNT =
+  8;
 
 export function OrderAdminList({
   orders,
-  onStatusChange,
-  onPaymentStatusChange,
-  onAffiliateStatusChange,
-  onSelectOrder,
+  onStatusChangeAction,
+  onPaymentStatusChangeAction,
+  onAffiliateStatusChangeAction,
+  onSelectOrderAction,
   updatingOrderStatusId,
   updatingPaymentStatusId,
   updatingAffiliateOrderId,
 }: OrderAdminListProps) {
-  const [showAll, setShowAll] =
-    useState(false);
+  const [
+    showAll,
+    setShowAll,
+  ] = useState(false);
 
-  const [searchTerm, setSearchTerm] =
-    useState("");
+  const [
+    searchTerm,
+    setSearchTerm,
+  ] = useState("");
 
-  const [sortBy, setSortBy] =
+  const [
+    sortBy,
+    setSortBy,
+  ] =
     useState<OrderSortOption>(
       "newest"
     );
+
+  const [
+    estimatedDeliveryValues,
+    setEstimatedDeliveryValues,
+  ] = useState<
+    Record<string, string>
+  >({});
+
+  const [
+    updatingEstimatedDeliveryId,
+    setUpdatingEstimatedDeliveryId,
+  ] = useState<
+    string | null
+  >(null);
 
   const filteredOrders =
     useMemo(() => {
@@ -98,45 +129,56 @@ export function OrderAdminList({
           .toLowerCase();
 
       const filtered =
-        orders.filter((order) => {
-          if (!search) {
-            return true;
+        orders.filter(
+          (order) => {
+            if (!search) {
+              return true;
+            }
+
+            const productNames =
+              order.products
+                ?.map(
+                  (product) =>
+                    product.name
+                )
+                .join(" ") ||
+              "";
+
+            const searchableText =
+              [
+                order.id,
+                order.customerInfo
+                  ?.fullName,
+                order.customerInfo
+                  ?.email,
+                order.customerInfo
+                  ?.phone,
+                order.orderStatus,
+                order.paymentStatus,
+                order.paymentMethod,
+                order.transactionReference,
+                order.affiliateCode,
+                order.affiliateName,
+                order.estimatedDelivery,
+                productNames,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+
+            return searchableText.includes(
+              search
+            );
           }
+        );
 
-          const productNames =
-            order.products
-              ?.map(
-                (product) =>
-                  product.name
-              )
-              .join(" ") || "";
-
-          const searchableText = [
-            order.id,
-            order.customerInfo
-              ?.fullName,
-            order.customerInfo
-              ?.email,
-            order.customerInfo?.phone,
-            order.orderStatus,
-            order.paymentStatus,
-            order.paymentMethod,
-            order.transactionReference,
-            order.affiliateCode,
-            order.affiliateName,
-            productNames,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-
-          return searchableText.includes(
-            search
-          );
-        });
-
-      return [...filtered].sort(
-        (first, second) => {
+      return [
+        ...filtered,
+      ].sort(
+        (
+          first,
+          second
+        ) => {
           const firstTime =
             getTimestamp(
               first.createdAt
@@ -149,19 +191,23 @@ export function OrderAdminList({
 
           const firstTotal =
             Number(
-              first.total || 0
+              first.total ||
+                0
             );
 
           const secondTotal =
             Number(
-              second.total || 0
+              second.total ||
+                0
             );
 
           if (
-            sortBy === "oldest"
+            sortBy ===
+            "oldest"
           ) {
             return (
-              firstTime - secondTime
+              firstTime -
+              secondTime
             );
           }
 
@@ -170,7 +216,8 @@ export function OrderAdminList({
             "total-high"
           ) {
             return (
-              secondTotal - firstTotal
+              secondTotal -
+              firstTotal
             );
           }
 
@@ -179,7 +226,8 @@ export function OrderAdminList({
             "total-low"
           ) {
             return (
-              firstTotal - secondTotal
+              firstTotal -
+              secondTotal
             );
           }
 
@@ -216,7 +264,8 @@ export function OrderAdminList({
           }
 
           return (
-            secondTime - firstTime
+            secondTime -
+            firstTime
           );
         }
       );
@@ -236,7 +285,59 @@ export function OrderAdminList({
 
   useEffect(() => {
     setShowAll(false);
-  }, [searchTerm, sortBy]);
+  }, [
+    searchTerm,
+    sortBy,
+  ]);
+
+  async function saveEstimatedDelivery(
+    orderId: string,
+    value: string
+  ) {
+    const cleanValue =
+      value.trim();
+
+    if (!cleanValue) {
+      toast.error(
+        "Enter an estimated delivery."
+      );
+
+      return;
+    }
+
+    setUpdatingEstimatedDeliveryId(
+      orderId
+    );
+
+    try {
+      await updateOrderEstimatedDelivery(
+        orderId,
+        cleanValue
+      );
+
+      toast.success(
+        "Estimated delivery updated."
+      );
+
+      setEstimatedDeliveryValues(
+        (current) => ({
+          ...current,
+          [orderId]:
+            cleanValue,
+        })
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not update estimated delivery."
+      );
+    } finally {
+      setUpdatingEstimatedDeliveryId(
+        null
+      );
+    }
+  }
 
   return (
     <article className="admin-list">
@@ -251,68 +352,109 @@ export function OrderAdminList({
 
         <small
           style={{
-            color: "var(--muted)",
+            color:
+              "var(--muted)",
           }}
         >
-          {filteredOrders.length} of{" "}
-          {orders.length} orders
+          {
+            filteredOrders.length
+          }{" "}
+          of{" "}
+          {
+            orders.length
+          }{" "}
+          orders
         </small>
       </div>
 
-      {orders.length > 0 ? (
+      {orders.length >
+      0 ? (
         <div
           style={{
-            display: "grid",
+            display:
+              "grid",
+
             gridTemplateColumns:
               "minmax(0, 1fr) minmax(180px, 240px)",
+
             gap: 12,
-            marginTop: 18,
-            marginBottom: 18,
+
+            marginTop:
+              18,
+
+            marginBottom:
+              18,
           }}
         >
           <label
             style={{
-              position: "relative",
+              position:
+                "relative",
             }}
           >
             <span
               style={{
                 position:
                   "absolute",
-                left: 13,
-                top: "50%",
+
+                left:
+                  13,
+
+                top:
+                  "50%",
+
                 transform:
                   "translateY(-50%)",
-                display: "grid",
+
+                display:
+                  "grid",
+
                 color:
                   "var(--muted)",
+
                 pointerEvents:
                   "none",
               }}
             >
-              <Search size={17} />
+              <Search
+                size={
+                  17
+                }
+              />
             </span>
 
             <input
               type="search"
-              value={searchTerm}
-              onChange={(event) =>
+              value={
+                searchTerm
+              }
+              onChange={(
+                event
+              ) =>
                 setSearchTerm(
-                  event.target.value
+                  event
+                    .target
+                    .value
                 )
               }
               placeholder="Search order, customer or affiliate"
               style={{
-                paddingLeft: 40,
+                paddingLeft:
+                  40,
               }}
             />
           </label>
 
           <select
-            value={sortBy}
-            onChange={(event) =>
+            value={
+              sortBy
+            }
+            onChange={(
+              event
+            ) =>
               setSortBy(
-                event.target
+                event
+                  .target
                   .value as OrderSortOption
               )
             }
@@ -345,14 +487,20 @@ export function OrderAdminList({
         </div>
       ) : null}
 
-      {orders.length === 0 ? (
-        <p>No orders yet.</p>
+      {orders.length ===
+      0 ? (
+        <p>
+          No orders yet.
+        </p>
       ) : null}
 
-      {orders.length > 0 &&
-      filteredOrders.length === 0 ? (
+      {orders.length >
+        0 &&
+      filteredOrders.length ===
+        0 ? (
         <p>
-          No orders match your search.
+          No orders match
+          your search.
         </p>
       ) : null}
 
@@ -370,38 +518,70 @@ export function OrderAdminList({
             updatingAffiliateOrderId ===
             order.id;
 
+          const estimatedDeliveryUpdating =
+            updatingEstimatedDeliveryId ===
+            order.id;
+
+          const estimatedDeliveryValue =
+            estimatedDeliveryValues[
+              order.id
+            ] ??
+            order.estimatedDelivery ??
+            "";
+
           return (
             <div
               className="admin-row"
-              key={order.id}
+              key={
+                order.id
+              }
               onClick={() =>
-                onSelectOrder(order)
+                onSelectOrderAction(
+                  order
+                )
               }
               style={{
-                display: "flex",
+                display:
+                  "flex",
+
                 flexDirection:
                   "column",
+
                 alignItems:
                   "stretch",
-                gap: 12,
-                cursor: "pointer",
+
+                gap:
+                  12,
+
+                cursor:
+                  "pointer",
               }}
             >
               <div
                 style={{
-                  display: "flex",
+                  display:
+                    "flex",
+
                   justifyContent:
                     "space-between",
+
                   alignItems:
                     "flex-start",
-                  flexWrap: "wrap",
-                  gap: 10,
+
+                  flexWrap:
+                    "wrap",
+
+                  gap:
+                    10,
                 }}
               >
                 <strong>
                   Order #
                   {order.id
-                    .slice(0, 8)
+                    .slice(
+                      0,
+                      8
+                    )
                     .toUpperCase()}
                 </strong>
 
@@ -419,17 +599,21 @@ export function OrderAdminList({
 
               <span>
                 Customer:{" "}
-                {order.customerInfo
+                {order
+                  .customerInfo
                   ?.fullName ||
-                  order.customerInfo
+                  order
+                    .customerInfo
                     ?.email ||
                   "-"}
               </span>
 
               <span>
                 Email:{" "}
-                {order.customerInfo
-                  ?.email || "-"}
+                {order
+                  .customerInfo
+                  ?.email ||
+                  "-"}
               </span>
 
               <span>
@@ -437,7 +621,8 @@ export function OrderAdminList({
                 <strong>
                   {formatCurrency(
                     Number(
-                      order.total || 0
+                      order.total ||
+                        0
                     )
                   )}
                 </strong>
@@ -452,7 +637,8 @@ export function OrderAdminList({
 
               {order.transactionReference ? (
                 <span>
-                  UTR / Transaction ID:{" "}
+                  UTR / Transaction
+                  ID:{" "}
                   <strong>
                     {
                       order.transactionReference
@@ -462,7 +648,9 @@ export function OrderAdminList({
               ) : null}
 
               <label
-                onClick={(event) =>
+                onClick={(
+                  event
+                ) =>
                   event.stopPropagation()
                 }
               >
@@ -476,13 +664,18 @@ export function OrderAdminList({
                   disabled={
                     orderUpdating
                   }
-                  onClick={(event) =>
+                  onClick={(
+                    event
+                  ) =>
                     event.stopPropagation()
                   }
-                  onChange={(event) =>
-                    onStatusChange(
+                  onChange={(
+                    event
+                  ) =>
+                    onStatusChangeAction(
                       order.id,
-                      event.target
+                      event
+                        .target
                         .value as OrderStatus
                     )
                   }
@@ -510,7 +703,9 @@ export function OrderAdminList({
               </label>
 
               <label
-                onClick={(event) =>
+                onClick={(
+                  event
+                ) =>
                   event.stopPropagation()
                 }
               >
@@ -524,13 +719,18 @@ export function OrderAdminList({
                   disabled={
                     paymentUpdating
                   }
-                  onClick={(event) =>
+                  onClick={(
+                    event
+                  ) =>
                     event.stopPropagation()
                   }
-                  onChange={(event) =>
-                    onPaymentStatusChange(
+                  onChange={(
+                    event
+                  ) =>
+                    onPaymentStatusChangeAction(
                       order.id,
-                      event.target
+                      event
+                        .target
                         .value as PaymentStatus
                     )
                   }
@@ -553,15 +753,155 @@ export function OrderAdminList({
                 </select>
               </label>
 
+              <div
+                onClick={(
+                  event
+                ) =>
+                  event.stopPropagation()
+                }
+                style={{
+                  padding:
+                    14,
+
+                  border:
+                    "1px solid var(--line)",
+
+                  borderRadius:
+                    10,
+
+                  background:
+                    "rgba(255,255,255,0.025)",
+                }}
+              >
+                <label>
+                  Estimated Delivery
+
+                  <input
+                    type="text"
+                    value={
+                      estimatedDeliveryValue
+                    }
+                    placeholder="e.g. 12–16 August 2026"
+                    maxLength={
+                      100
+                    }
+                    disabled={
+                      estimatedDeliveryUpdating
+                    }
+                    onClick={(
+                      event
+                    ) =>
+                      event.stopPropagation()
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setEstimatedDeliveryValues(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+
+                          [order.id]:
+                            event
+                              .target
+                              .value,
+                        })
+                      )
+                    }
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  className="button secondary"
+                  style={{
+                    width:
+                      "100%",
+
+                    marginTop:
+                      10,
+                  }}
+                  disabled={
+                    estimatedDeliveryUpdating ||
+                    !estimatedDeliveryValue.trim()
+                  }
+                  onClick={(
+                    event
+                  ) => {
+                    event.stopPropagation();
+
+                    void saveEstimatedDelivery(
+                      order.id,
+                      estimatedDeliveryValue
+                    );
+                  }}
+                >
+                  {estimatedDeliveryUpdating
+                    ? "Saving..."
+                    : "Save Estimated Delivery"}
+                </button>
+
+                {order.estimatedDelivery ? (
+                  <small
+                    style={{
+                      display:
+                        "block",
+
+                      marginTop:
+                        8,
+
+                      color:
+                        "var(--muted)",
+                    }}
+                  >
+                    Current:{" "}
+                    {
+                      order.estimatedDelivery
+                    }
+                  </small>
+                ) : (
+                  <small
+                    style={{
+                      display:
+                        "block",
+
+                      marginTop:
+                        8,
+
+                      color:
+                        "var(--muted)",
+                    }}
+                  >
+                    No estimate set
+                    yet.
+                  </small>
+                )}
+              </div>
+
               {order.affiliateCode ? (
                 <div
+                  onClick={(
+                    event
+                  ) =>
+                    event.stopPropagation()
+                  }
                   style={{
-                    display: "grid",
-                    gap: 10,
-                    padding: 14,
+                    display:
+                      "grid",
+
+                    gap:
+                      10,
+
+                    padding:
+                      14,
+
                     border:
                       "1px solid var(--line)",
-                    borderRadius: 8,
+
+                    borderRadius:
+                      8,
+
                     background:
                       "rgba(255,255,255,0.025)",
                   }}
@@ -593,11 +933,7 @@ export function OrderAdminList({
                     </strong>
                   </span>
 
-                  <label
-                    onClick={(event) =>
-                      event.stopPropagation()
-                    }
-                  >
+                  <label>
                     Affiliate commission
 
                     <select
@@ -608,13 +944,18 @@ export function OrderAdminList({
                       disabled={
                         affiliateUpdating
                       }
-                      onClick={(event) =>
+                      onClick={(
+                        event
+                      ) =>
                         event.stopPropagation()
                       }
-                      onChange={(event) =>
-                        onAffiliateStatusChange(
+                      onChange={(
+                        event
+                      ) =>
+                        onAffiliateStatusChangeAction(
                           order.id,
-                          event.target
+                          event
+                            .target
                             .value as AffiliateCommissionStatus
                         )
                       }
@@ -641,7 +982,8 @@ export function OrderAdminList({
 
               {orderUpdating ||
               paymentUpdating ||
-              affiliateUpdating ? (
+              affiliateUpdating ||
+              estimatedDeliveryUpdating ? (
                 <small
                   style={{
                     color:
@@ -658,8 +1000,9 @@ export function OrderAdminList({
                     "var(--muted)",
                 }}
               >
-                Click outside the controls
-                to view complete order
+                Click outside the
+                controls to view
+                complete order
                 details.
               </small>
             </div>
@@ -675,27 +1018,43 @@ export function OrderAdminList({
           className="button secondary"
           onClick={() =>
             setShowAll(
-              (current) =>
+              (
+                current
+              ) =>
                 !current
             )
           }
           style={{
-            width: "100%",
-            marginTop: 14,
+            width:
+              "100%",
+
+            marginTop:
+              14,
           }}
         >
           {showAll ? (
             <>
-              <ChevronUp size={18} />
+              <ChevronUp
+                size={
+                  18
+                }
+              />
+
               Show Less
             </>
           ) : (
             <>
               <ChevronDown
-                size={18}
+                size={
+                  18
+                }
               />
+
               Show All (
-              {filteredOrders.length})
+              {
+                filteredOrders.length
+              }
+              )
             </>
           )}
         </button>
@@ -705,17 +1064,27 @@ export function OrderAdminList({
 }
 
 function formatPaymentMethod(
-  method: AdminOrder["paymentMethod"]
+  method:
+    AdminOrder["paymentMethod"]
 ) {
-  if (method === "UPI_MANUAL") {
+  if (
+    method ===
+    "UPI_MANUAL"
+  ) {
     return "UPI — Manual Verification";
   }
 
-  if (method === "COD") {
+  if (
+    method ===
+    "COD"
+  ) {
     return "Cash on Delivery";
   }
 
-  if (method === "ONLINE") {
+  if (
+    method ===
+    "ONLINE"
+  ) {
     return "Online Payment";
   }
 
@@ -728,7 +1097,10 @@ function getOrderStatusPriority(
     | "PENDING"
     | "DELIVERED"
 ) {
-  if (preferred === "DELIVERED") {
+  if (
+    preferred ===
+    "DELIVERED"
+  ) {
     return order.orderStatus ===
       "DELIVERED"
       ? 0
@@ -745,14 +1117,18 @@ function getOrderStatusPriority(
     order.paymentStatus ===
       "AWAITING_VERIFICATION";
 
-  return isPending ? 0 : 1;
+  return isPending
+    ? 0
+    : 1;
 }
 
 function getTimestamp(
   value: unknown
 ) {
   const date =
-    convertToDate(value);
+    convertToDate(
+      value
+    );
 
   return date
     ? date.getTime()
@@ -763,7 +1139,9 @@ function formatDate(
   value: unknown
 ) {
   const date =
-    convertToDate(value);
+    convertToDate(
+      value
+    );
 
   if (!date) {
     return "-";
@@ -772,17 +1150,27 @@ function formatDate(
   return new Intl.DateTimeFormat(
     "en-IN",
     {
-      dateStyle: "medium",
-      timeStyle: "short",
-      timeZone: "Asia/Kolkata",
+      dateStyle:
+        "medium",
+
+      timeStyle:
+        "short",
+
+      timeZone:
+        "Asia/Kolkata",
     }
-  ).format(date);
+  ).format(
+    date
+  );
 }
 
 function convertToDate(
   value: unknown
 ): Date | null {
-  if (value instanceof Date) {
+  if (
+    value instanceof
+    Date
+  ) {
     return Number.isNaN(
       value.getTime()
     )
@@ -792,12 +1180,15 @@ function convertToDate(
 
   if (
     value &&
-    typeof value === "object" &&
+    typeof value ===
+      "object" &&
     "toDate" in value
   ) {
-    const timestamp = value as {
-      toDate?: unknown;
-    };
+    const timestamp =
+      value as {
+        toDate?:
+          unknown;
+      };
 
     if (
       typeof timestamp.toDate ===
@@ -806,18 +1197,23 @@ function convertToDate(
       const date =
         timestamp.toDate();
 
-      return date instanceof Date
+      return date instanceof
+        Date
         ? date
         : null;
     }
   }
 
   if (
-    typeof value === "string" ||
-    typeof value === "number"
+    typeof value ===
+      "string" ||
+    typeof value ===
+      "number"
   ) {
     const date =
-      new Date(value);
+      new Date(
+        value
+      );
 
     return Number.isNaN(
       date.getTime()

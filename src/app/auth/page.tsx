@@ -1,7 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import toast from "react-hot-toast";
 import { LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +16,13 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const { login, signup, resetPassword, loginWithGoogle } = useAuth();
   const router = useRouter();
+  const searchParams =
+  useSearchParams();
+
+const redirectUrl =
+  searchParams.get(
+    "redirect"
+  ) || "/profile";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,7 +36,9 @@ export default function AuthPage() {
       if (mode === "signup") {
         await signup(name, email, password);
         toast.success("Welcome to RailVision.");
-        router.push("/profile");
+        router.push(
+  redirectUrl
+);
       } else if (mode === "reset") {
         await resetPassword(email);
         toast.success("Password reset email sent.");
@@ -34,7 +46,9 @@ export default function AuthPage() {
       } else {
         await login(email, password);
         toast.success("Logged in.");
-        router.push("/profile");
+        router.push(
+  redirectUrl
+);
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Authentication failed.");
@@ -86,7 +100,9 @@ export default function AuthPage() {
                   setLoading(true);
                   await loginWithGoogle();
                   toast.success("Logged in with Google.");
-                  router.push("/profile");
+                  router.push(
+  redirectUrl
+);
                 } catch (error) {
                   toast.error(
                     error instanceof Error

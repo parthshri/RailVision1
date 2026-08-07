@@ -1,13 +1,26 @@
 "use client";
 
-import { CreditCard } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import {
+  ShoppingBag,
+} from "lucide-react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  useState,
+} from "react";
+
 import toast from "react-hot-toast";
 
-import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/contexts/CartContext";
-import { Product } from "@/lib/products";
+import {
+  useCart,
+} from "@/contexts/CartContext";
+
+import {
+  Product,
+} from "@/lib/products";
 
 type CheckoutButtonProps = {
   product?: Product;
@@ -20,33 +33,48 @@ export function CheckoutButton({
   label = "Checkout",
   className = "",
 }: CheckoutButtonProps) {
-  const [loading, setLoading] = useState(false);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
-  const { user } = useAuth();
-  const cart = useCart();
-  const router = useRouter();
+  const cart =
+    useCart();
 
-  async function checkout() {
-    if (!user) {
-      toast.error("Please login before checkout.");
-      router.push("/auth");
-      return;
-    }
+  const router =
+    useRouter();
 
+  function checkout() {
     setLoading(true);
 
     try {
+      // Direct product checkout
+      // Guest checkout is allowed
       if (product) {
-        router.push(`/checkout?product=${product.id}`);
+        router.push(
+          `/checkout?product=${encodeURIComponent(
+            product.id
+          )}`
+        );
+
         return;
       }
 
-      if (cart.items.length === 0) {
-        toast.error("Your cart is empty.");
+      // Cart checkout
+      if (
+        cart.items.length ===
+        0
+      ) {
+        toast.error(
+          "Your cart is empty."
+        );
+
         return;
       }
 
-      router.push("/checkout");
+      router.push(
+        "/checkout"
+      );
     } finally {
       setLoading(false);
     }
@@ -54,12 +82,18 @@ export function CheckoutButton({
 
   return (
     <button
+      type="button"
       className={`button primary ${className}`}
       onClick={checkout}
       disabled={loading}
     >
-      <CreditCard size={18} />
-      {loading ? "Preparing..." : label}
+      <ShoppingBag
+        size={18}
+      />
+
+      {loading
+        ? "Preparing..."
+        : label}
     </button>
   );
 }

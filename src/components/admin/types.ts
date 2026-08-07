@@ -44,16 +44,29 @@ export type AdminOrder =
       | "UPI_MANUAL"
       | "ONLINE";
 
-    paymentStatus?: PaymentStatus;
+    paymentStatus?:
+      PaymentStatus;
 
-    orderStatus?: OrderStatus;
+    orderStatus?:
+      OrderStatus;
 
-    transactionReference?: string;
+    transactionReference?:
+      string;
 
-    affiliateCode?: string;
-    affiliateName?: string;
-    affiliateCommission?: number;
-    affiliateStatus?: AffiliateCommissionStatus;
+    affiliateCode?:
+      string;
+
+    affiliateName?:
+      string;
+
+    affiliateCommission?:
+      number;
+
+    affiliateStatus?:
+      AffiliateCommissionStatus;
+
+    estimatedDelivery?:
+      string;
   };
 
 export type AffiliateApplication =

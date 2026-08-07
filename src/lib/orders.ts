@@ -8,7 +8,15 @@ export type OrderItem = {
 export type Order = {
   id?: string;
 
-  userId: string;
+  // Signed-in user UID, or null for guest checkout
+  userId: string | null;
+
+  // Helps distinguish guest orders in admin/dashboard
+  isGuestOrder?: boolean;
+
+  // Original account email if signed in
+  // Checkout email can still be different/editable
+  accountEmail?: string | null;
 
   customerInfo: {
     fullName: string;
@@ -47,18 +55,19 @@ export type Order = {
     | "SHIPPED"
     | "DELIVERED"
     | "CANCELLED";
-  
-  transactionReference?: string;
-    affiliateCode?: string;
-affiliateName?: string;
-affiliateCommission?: number;
 
-affiliateStatus?:
-  | "PENDING"
-  | "APPROVED"
-  | "PAID"
-  | "REJECTED";
-  
+  transactionReference?: string;
+  estimatedDelivery?: string;
+  affiliateCode?: string;
+  affiliateName?: string;
+  affiliateCommission?: number;
+
+  affiliateStatus?:
+    | "PENDING"
+    | "APPROVED"
+    | "PAID"
+    | "REJECTED";
+
   createdAt?: unknown;
   updatedAt?: unknown;
 };

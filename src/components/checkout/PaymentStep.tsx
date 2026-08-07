@@ -49,6 +49,14 @@ type CheckoutItem = {
 
 const COD_CHARGE = 100;
 const DISPLAY_DISCOUNT = 200;
+const PHONE_REGEX = /^[6-9]\d{9}$/;
+
+const EMAIL_REGEX =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const PIN_CODE_REGEX =
+  /^[1-9][0-9]{5}$/;
+
 
 export default function PaymentStep({
   directProduct,
@@ -259,14 +267,134 @@ export default function PaymentStep({
   }
 
   async function placeOrder() {
-    if (!user) {
+        const cleanFullName =
+      customerInfo.fullName.trim();
+
+    const cleanEmail =
+      customerInfo.email
+        .trim()
+        .toLowerCase();
+
+    const cleanPhone =
+      customerInfo.phone.trim();
+
+    const cleanAlternatePhone =
+      customerInfo.alternatePhone.trim();
+
+    const cleanHouse =
+      shippingAddress.house.trim();
+
+    const cleanStreet =
+      shippingAddress.street.trim();
+
+    const cleanCity =
+      shippingAddress.city.trim();
+
+    const cleanState =
+      shippingAddress.state.trim();
+
+    const cleanPinCode =
+      shippingAddress.pinCode.trim();
+
+    if (
+      cleanFullName.length < 2 ||
+      !/[a-zA-Z]/.test(cleanFullName)
+    ) {
       toast.error(
-        "Please login before placing an order."
+        "Please enter a valid full name."
       );
 
-      router.push("/auth");
+      setCheckoutStep(1);
       return;
     }
+
+    if (
+      !EMAIL_REGEX.test(cleanEmail)
+    ) {
+      toast.error(
+        "Please enter a valid email address."
+      );
+
+      setCheckoutStep(1);
+      return;
+    }
+
+    if (
+      !PHONE_REGEX.test(cleanPhone)
+    ) {
+      toast.error(
+        "Please enter a valid 10-digit Indian mobile number."
+      );
+
+      setCheckoutStep(1);
+      return;
+    }
+
+    if (
+      cleanAlternatePhone &&
+      !PHONE_REGEX.test(
+        cleanAlternatePhone
+      )
+    ) {
+      toast.error(
+        "Please enter a valid alternate mobile number."
+      );
+
+      setCheckoutStep(1);
+      return;
+    }
+
+    if (
+      cleanAlternatePhone &&
+      cleanAlternatePhone === cleanPhone
+    ) {
+      toast.error(
+        "Alternate phone number must be different from the primary number."
+      );
+
+      setCheckoutStep(1);
+      return;
+    }
+
+    if (
+      !cleanHouse ||
+      !cleanStreet ||
+      !cleanCity ||
+      !cleanState
+    ) {
+      toast.error(
+        "Please complete your shipping address."
+      );
+
+      setCheckoutStep(2);
+      return;
+    }
+
+    if (
+      !PIN_CODE_REGEX.test(
+        cleanPinCode
+      )
+    ) {
+      toast.error(
+        "Please enter a valid 6-digit Indian PIN code."
+      );
+
+      setCheckoutStep(2);
+      return;
+    }
+
+    if (
+      shippingAddress.country !==
+      "India"
+    ) {
+      toast.error(
+        "RailVision currently ships within India only."
+      );
+
+      setCheckoutStep(2);
+      return;
+    }
+
 
     if (!paymentMethod) {
       toast.error(
@@ -341,27 +469,69 @@ export default function PaymentStep({
           : {};
 
       const baseOrder = {
-        userId: user.uid,
+  userId: user?.uid ?? null,
 
-        customerInfo,
+  isGuestOrder: !user,
 
-        shippingAddress,
+  accountEmail:
+    user?.email ?? null,
 
-        products: orderItems,
+  customerInfo: {
+    ...customerInfo,
 
-        total: payableTotal,
+    fullName:
+      customerInfo.fullName.trim(),
 
-        paymentStatus:
-          paymentMethod ===
-          "UPI_MANUAL"
-            ? ("AWAITING_VERIFICATION" as const)
-            : ("PENDING" as const),
+    email:
+      customerInfo.email
+        .trim()
+        .toLowerCase(),
 
-        orderStatus:
-          "PLACED" as const,
+    phone:
+      customerInfo.phone.trim(),
 
-        ...affiliateData,
-      };
+    alternatePhone:
+      customerInfo.alternatePhone.trim(),
+  },
+
+  shippingAddress: {
+    ...shippingAddress,
+
+    house:
+      shippingAddress.house.trim(),
+
+    street:
+      shippingAddress.street.trim(),
+
+    area:
+      shippingAddress.area.trim(),
+
+    city:
+      shippingAddress.city.trim(),
+
+    state:
+      shippingAddress.state.trim(),
+
+    pinCode:
+      shippingAddress.pinCode.trim(),
+
+    country: "India",
+  },
+
+  products: orderItems,
+
+  total: payableTotal,
+
+  paymentStatus:
+    paymentMethod === "UPI_MANUAL"
+      ? ("AWAITING_VERIFICATION" as const)
+      : ("PENDING" as const),
+
+  orderStatus:
+    "PLACED" as const,
+
+  ...affiliateData,
+};
 
       const orderDocument =
         paymentMethod === "UPI_MANUAL"
@@ -409,18 +579,24 @@ export default function PaymentStep({
       router.push(
         `/order-success?${successQuery.toString()}`
       );
-    } catch (error) {
-      console.error(
-        "Order creation failed:",
-        error
-      );
+   } catch (error) {
+  console.error(
+    "Order creation failed:",
+    error
+  );
 
-      toast.error(
-        "Could not place your order."
-      );
-    } finally {
-      setPlacingOrder(false);
-    }
+  if (error instanceof Error) {
+    toast.error(
+      `Order failed: ${error.message}`
+    );
+  } else {
+    toast.error(
+      "Could not place your order."
+    );
+  }
+} finally {
+  setPlacingOrder(false);
+}
   }
 
   return (
@@ -428,7 +604,46 @@ export default function PaymentStep({
       <h2>
         Payment & Order Summary
       </h2>
+    {!user ? (
+  <div
+    style={{
+      marginBottom: 20,
+      padding: 14,
+      border:
+        "1px solid rgba(85, 230, 255, 0.25)",
+      borderRadius: 10,
+      background:
+        "rgba(85, 230, 255, 0.05)",
+    }}
+  >
+    <strong
+      style={{
+        color:
+          "var(--cyan)",
+      }}
+    >
+      Guest Checkout
+    </strong>
 
+    <p
+      style={{
+        margin:
+          "6px 0 0",
+        color:
+          "var(--muted)",
+      }}
+    >
+      You're placing this
+      order without an
+      account. Order updates
+      will be sent to{" "}
+      <strong>
+        {customerInfo.email}
+      </strong>
+      .
+    </p>
+  </div>
+) : null}
       <div
         style={{
           marginBottom: 24,

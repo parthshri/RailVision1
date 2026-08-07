@@ -1,184 +1,301 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import {
+  useEffect,
+} from "react";
 
-import { useAuth } from "@/contexts/AuthContext";
-import { useCheckout } from "@/contexts/CheckoutContext";
+import {
+  useSearchParams,
+} from "next/navigation";
+
+import {
+  useCheckout,
+} from "@/contexts/CheckoutContext";
+
+import {
+  useCart,
+} from "@/contexts/CartContext";
 
 import CustomerStep from "@/components/checkout/CustomerStep";
 import AddressStep from "@/components/checkout/AddressStep";
 import PaymentStep from "@/components/checkout/PaymentStep";
 
-import { getProduct } from "@/lib/products";
-
+import {
+  getProduct,
+} from "@/lib/products";
 
 export default function CheckoutPage() {
+  const searchParams =
+    useSearchParams();
 
-  const { user } = useAuth();
+  const cart =
+    useCart();
 
-  const router = useRouter();
+  const reorder =
+    searchParams.get("reorder") ===
+    "1";
 
-  const searchParams = useSearchParams();
+  const productId =
+    searchParams.get(
+      "product"
+    );
 
-
-  const productId = searchParams.get("product");
-
-
-  const directProduct = productId
-    ? getProduct(productId)
-    : null;
-
-
+  const directProduct =
+    productId
+      ? getProduct(
+          productId
+        )
+      : null;
 
   const {
     checkoutStep,
   } = useCheckout();
 
-
-
   useEffect(() => {
-
-    if (!user) {
-      router.push("/auth");
+    if (
+      !reorder ||
+      typeof window ===
+        "undefined"
+    ) {
+      return;
     }
 
-  }, [user, router]);
+    const raw =
+      sessionStorage.getItem(
+        "railvisionReorder"
+      );
 
+    if (!raw) {
+      return;
+    }
 
+    try {
+      const items =
+        JSON.parse(raw);
 
-  if (!user) {
-    return null;
-  }
+      cart.clearCart();
 
+      items.forEach(
+        (
+          item: {
+            productId: string;
+            quantity: number;
+          }
+        ) => {
+          const product =
+            getProduct(
+              item.productId
+            );
 
+          if (!product) {
+            return;
+          }
+
+          cart.addItem(
+            product,
+            item.quantity
+          );
+        }
+      );
+
+      sessionStorage.removeItem(
+        "railvisionReorder"
+      );
+    } catch {
+      sessionStorage.removeItem(
+        "railvisionReorder"
+      );
+    }
+  }, [reorder]);
 
   return (
-
     <section className="section">
-
-
-      <h1>
-        Checkout
-      </h1>
-
-
-
       <div
         style={{
-          display:"flex",
-          justifyContent:"center",
-          gap:20,
-          margin:"30px 0",
-          flexWrap:"wrap"
+          maxWidth: 1000,
+          margin: "0 auto",
         }}
       >
+        <div
+          style={{
+            marginBottom: 30,
+          }}
+        >
+          <span className="eyebrow">
+            Secure Checkout
+          </span>
 
+          <h1
+            style={{
+              marginTop: 8,
+            }}
+          >
+            Complete Your Order
+          </h1>
 
-        <StepIndicator
-          number={1}
-          label="Customer"
-          active={checkoutStep===1}
-        />
+          <p
+            style={{
+              color:
+                "var(--muted)",
+              maxWidth: 650,
+            }}
+          >
+            Enter your details,
+            delivery address and
+            preferred payment
+            method to place your
+            RailVision order.
+          </p>
+        </div>
 
-
-        <StepIndicator
-          number={2}
-          label="Address"
-          active={checkoutStep===2}
-        />
-
-
-        <StepIndicator
-          number={3}
-          label="Payment"
-          active={checkoutStep===3}
-        />
-
-
-      </div>
-
-
-
-      <div
-        style={{
-          maxWidth:900,
-          margin:"auto"
-        }}
-      >
-
-
-        {
-          checkoutStep===1 &&
-          <CustomerStep />
-        }
-
-
-
-        {
-          checkoutStep===2 &&
-          <AddressStep />
-        }
-
-
-
-        {
-          checkoutStep===3 &&
-          <PaymentStep 
-            directProduct={directProduct}
+        <div
+          style={{
+            display: "flex",
+            justifyContent:
+              "center",
+            gap: 12,
+            margin:
+              "30px 0",
+            flexWrap:
+              "wrap",
+          }}
+        >
+          <StepIndicator
+            number={1}
+            label="Customer"
+            active={
+              checkoutStep ===
+              1
+            }
+            complete={
+              checkoutStep >
+              1
+            }
           />
-        }
 
+          <StepIndicator
+            number={2}
+            label="Address"
+            active={
+              checkoutStep ===
+              2
+            }
+            complete={
+              checkoutStep >
+              2
+            }
+          />
 
+          <StepIndicator
+            number={3}
+            label="Payment"
+            active={
+              checkoutStep ===
+              3
+            }
+            complete={false}
+          />
+        </div>
 
+        <div
+          style={{
+            maxWidth: 900,
+            margin: "auto",
+            padding: 24,
+            border:
+              "1px solid var(--line)",
+            borderRadius:
+              18,
+            background:
+              "rgba(255,255,255,.025)",
+          }}
+        >
+          {checkoutStep ===
+            1 && (
+            <CustomerStep />
+          )}
+
+          {checkoutStep ===
+            2 && (
+            <AddressStep />
+          )}
+
+          {checkoutStep ===
+            3 && (
+            <PaymentStep
+              directProduct={
+                directProduct
+              }
+            />
+          )}
+        </div>
+
+        <div
+          style={{
+            marginTop: 20,
+            textAlign:
+              "center",
+            color:
+              "var(--muted)",
+            fontSize:
+              ".85rem",
+          }}
+        >
+          Secure checkout •
+          UPI and Cash on
+          Delivery where
+          available
+        </div>
       </div>
-
-
     </section>
-
   );
 }
-
-
-
-
 
 function StepIndicator({
   number,
   label,
   active,
-}:{
-  number:number;
-  label:string;
-  active:boolean;
+  complete,
+}: {
+  number: number;
+  label: string;
+  active: boolean;
+  complete: boolean;
 }) {
-
-
   return (
-
     <div
       style={{
-        display:"flex",
-        alignItems:"center",
-        gap:8,
-        padding:"10px 16px",
-        border:"1px solid var(--line)",
-        borderRadius:999,
-        background:
-          active
-          ? "rgba(85,230,255,0.12)"
-          : "rgba(255,255,255,0.03)",
-        color:
-          active
+        display: "flex",
+        alignItems:
+          "center",
+        gap: 8,
+        padding:
+          "10px 16px",
+        border: active
+          ? "1px solid var(--cyan)"
+          : complete
+          ? "1px solid var(--green)"
+          : "1px solid var(--line)",
+        borderRadius:
+          999,
+        background: active
+          ? "rgba(85,230,255,.12)"
+          : complete
+          ? "rgba(82,217,150,.08)"
+          : "rgba(255,255,255,.03)",
+        color: active
           ? "var(--cyan)"
+          : complete
+          ? "var(--green)"
           : "var(--muted)",
-        fontWeight:800
+        fontWeight: 800,
       }}
     >
-
-      {number}. {label}
-
+      {complete
+        ? "✓"
+        : number}
+      . {label}
     </div>
-
   );
 }

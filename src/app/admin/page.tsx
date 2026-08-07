@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -24,9 +25,17 @@ import {
   UsersRound,
 } from "lucide-react";
 
-import { useAuth } from "@/contexts/AuthContext";
-import { db } from "@/lib/firebase";
-import { formatCurrency } from "@/lib/products";
+import {
+  useAuth,
+} from "@/contexts/AuthContext";
+
+import {
+  db,
+} from "@/lib/firebase";
+
+import {
+  formatCurrency,
+} from "@/lib/products";
 
 import {
   type AffiliateCommissionStatus,
@@ -68,17 +77,37 @@ export default function AdminPage() {
     loading,
   } = useAuth();
 
-  const [orders, setOrders] =
-    useState<AdminOrder[]>([]);
+  const [
+    orders,
+    setOrders,
+  ] =
+    useState<AdminOrder[]>(
+      []
+    );
 
-  const [contacts, setContacts] =
-    useState<FirestoreDoc[]>([]);
+  const [
+    contacts,
+    setContacts,
+  ] =
+    useState<FirestoreDoc[]>(
+      []
+    );
 
-  const [inquiries, setInquiries] =
-    useState<FirestoreDoc[]>([]);
+  const [
+    inquiries,
+    setInquiries,
+  ] =
+    useState<FirestoreDoc[]>(
+      []
+    );
 
-  const [customers, setCustomers] =
-    useState<FirestoreDoc[]>([]);
+  const [
+    customers,
+    setCustomers,
+  ] =
+    useState<FirestoreDoc[]>(
+      []
+    );
 
   const [
     affiliateApplications,
@@ -87,46 +116,71 @@ export default function AdminPage() {
     AffiliateApplication[]
   >([]);
 
-  const [selectedOrder, setSelectedOrder] =
-    useState<AdminOrder | null>(null);
+  const [
+    selectedOrder,
+    setSelectedOrder,
+  ] =
+    useState<AdminOrder | null>(
+      null
+    );
 
   const [
     updatingOrderStatusId,
     setUpdatingOrderStatusId,
-  ] = useState<string | null>(null);
+  ] = useState<
+    string | null
+  >(null);
 
   const [
     updatingPaymentStatusId,
     setUpdatingPaymentStatusId,
-  ] = useState<string | null>(null);
+  ] = useState<
+    string | null
+  >(null);
 
   const [
     updatingAffiliateOrderId,
     setUpdatingAffiliateOrderId,
-  ] = useState<string | null>(null);
+  ] = useState<
+    string | null
+  >(null);
 
   const [
     reviewingApplicationId,
     setReviewingApplicationId,
-  ] = useState<string | null>(null);
+  ] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
-    if (!isAdmin || !db) {
+    if (
+      !isAdmin ||
+      !db
+    ) {
       return;
     }
 
     const unsubscribers = [
       onSnapshot(
         query(
-          collection(db, "orders"),
-          orderBy("createdAt", "desc")
+          collection(
+            db,
+            "orders"
+          ),
+          orderBy(
+            "createdAt",
+            "desc"
+          )
         ),
         (snapshot) => {
           setOrders(
             snapshot.docs.map(
-              (document) =>
+              (
+                document
+              ) =>
                 ({
-                  id: document.id,
+                  id:
+                    document.id,
                   ...document.data(),
                 }) as AdminOrder
             )
@@ -150,14 +204,20 @@ export default function AdminPage() {
             db,
             "affiliateApplications"
           ),
-          orderBy("createdAt", "desc")
+          orderBy(
+            "createdAt",
+            "desc"
+          )
         ),
         (snapshot) => {
           setAffiliateApplications(
             snapshot.docs.map(
-              (document) =>
+              (
+                document
+              ) =>
                 ({
-                  id: document.id,
+                  id:
+                    document.id,
                   ...document.data(),
                 }) as AffiliateApplication
             )
@@ -173,14 +233,23 @@ export default function AdminPage() {
 
       onSnapshot(
         query(
-          collection(db, "contacts"),
-          orderBy("createdAt", "desc")
+          collection(
+            db,
+            "contacts"
+          ),
+          orderBy(
+            "createdAt",
+            "desc"
+          )
         ),
         (snapshot) => {
           setContacts(
             snapshot.docs.map(
-              (document) => ({
-                id: document.id,
+              (
+                document
+              ) => ({
+                id:
+                  document.id,
                 ...document.data(),
               })
             )
@@ -200,13 +269,19 @@ export default function AdminPage() {
             db,
             "proInquiries"
           ),
-          orderBy("createdAt", "desc")
+          orderBy(
+            "createdAt",
+            "desc"
+          )
         ),
         (snapshot) => {
           setInquiries(
             snapshot.docs.map(
-              (document) => ({
-                id: document.id,
+              (
+                document
+              ) => ({
+                id:
+                  document.id,
                 ...document.data(),
               })
             )
@@ -221,12 +296,18 @@ export default function AdminPage() {
       ),
 
       onSnapshot(
-        collection(db, "users"),
+        collection(
+          db,
+          "users"
+        ),
         (snapshot) => {
           setCustomers(
             snapshot.docs.map(
-              (document) => ({
-                id: document.id,
+              (
+                document
+              ) => ({
+                id:
+                  document.id,
                 ...document.data(),
               })
             )
@@ -243,49 +324,73 @@ export default function AdminPage() {
 
     return () => {
       unsubscribers.forEach(
-        (unsubscribe) => unsubscribe()
+        (
+          unsubscribe
+        ) =>
+          unsubscribe()
       );
     };
-  }, [isAdmin]);
+  }, [
+    isAdmin,
+  ]);
 
-  const revenue = useMemo(
-    () =>
-      orders.reduce(
-        (sum, order) =>
-          sum +
-          Number(order.total || 0),
-        0
-      ),
-    [orders]
-  );
+  const revenue =
+    useMemo(
+      () =>
+        orders.reduce(
+          (
+            sum,
+            order
+          ) =>
+            sum +
+            Number(
+              order.total ||
+                0
+            ),
+          0
+        ),
+      [
+        orders,
+      ]
+    );
 
   const pendingAffiliateCommission =
     useMemo(
       () =>
-        orders.reduce((sum, order) => {
-          if (
-            order.affiliateStatus !==
-            "PENDING"
-          ) {
-            return sum;
-          }
+        orders.reduce(
+          (
+            sum,
+            order
+          ) => {
+            if (
+              order.affiliateStatus !==
+              "PENDING"
+            ) {
+              return sum;
+            }
 
-          return (
-            sum +
-            Number(
-              order.affiliateCommission ||
-                0
-            )
-          );
-        }, 0),
-      [orders]
+            return (
+              sum +
+              Number(
+                order.affiliateCommission ||
+                  0
+              )
+            );
+          },
+          0
+        ),
+      [
+        orders,
+      ]
     );
 
   async function changeOrderStatus(
     orderId: string,
     status: OrderStatus
   ) {
-    setUpdatingOrderStatusId(orderId);
+    setUpdatingOrderStatusId(
+      orderId
+    );
 
     try {
       await updateOrderStatus(
@@ -297,13 +402,17 @@ export default function AdminPage() {
         "Order status updated."
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       toast.error(
         "Failed to update order status."
       );
     } finally {
-      setUpdatingOrderStatusId(null);
+      setUpdatingOrderStatusId(
+        null
+      );
     }
   }
 
@@ -311,7 +420,9 @@ export default function AdminPage() {
     orderId: string,
     status: PaymentStatus
   ) {
-    setUpdatingPaymentStatusId(orderId);
+    setUpdatingPaymentStatusId(
+      orderId
+    );
 
     try {
       await updateOrderPaymentStatus(
@@ -320,18 +431,23 @@ export default function AdminPage() {
       );
 
       toast.success(
-        status === "PAID"
+        status ===
+          "PAID"
           ? "Payment marked as verified."
           : "Payment status updated."
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       toast.error(
         "Failed to update payment status."
       );
     } finally {
-      setUpdatingPaymentStatusId(null);
+      setUpdatingPaymentStatusId(
+        null
+      );
     }
   }
 
@@ -339,7 +455,9 @@ export default function AdminPage() {
     orderId: string,
     status: AffiliateCommissionStatus
   ) {
-    setUpdatingAffiliateOrderId(orderId);
+    setUpdatingAffiliateOrderId(
+      orderId
+    );
 
     try {
       await updateAffiliateCommissionStatus(
@@ -351,13 +469,17 @@ export default function AdminPage() {
         "Affiliate commission updated."
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       toast.error(
         "Failed to update affiliate commission."
       );
     } finally {
-      setUpdatingAffiliateOrderId(null);
+      setUpdatingAffiliateOrderId(
+        null
+      );
     }
   }
 
@@ -373,17 +495,23 @@ export default function AdminPage() {
       toast.error(
         "The application is missing required details."
       );
+
       return;
     }
 
     if (
-      !Number.isFinite(commissionRate) ||
-      commissionRate < 1 ||
-      commissionRate > 50
+      !Number.isFinite(
+        commissionRate
+      ) ||
+      commissionRate <
+        1 ||
+      commissionRate >
+        50
     ) {
       toast.error(
         "Enter a commission rate between 1% and 50%."
       );
+
       return;
     }
 
@@ -421,15 +549,20 @@ export default function AdminPage() {
         `Affiliate approved. Code: ${result.affiliateCode}`
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       toast.error(
-        error instanceof Error
+        error instanceof
+          Error
           ? error.message
           : "Could not approve the application."
       );
     } finally {
-      setReviewingApplicationId(null);
+      setReviewingApplicationId(
+        null
+      );
     }
   }
 
@@ -449,15 +582,20 @@ export default function AdminPage() {
         "Affiliate application rejected."
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       toast.error(
-        error instanceof Error
+        error instanceof
+          Error
           ? error.message
           : "Could not reject the application."
       );
     } finally {
-      setReviewingApplicationId(null);
+      setReviewingApplicationId(
+        null
+      );
     }
   }
 
@@ -469,17 +607,22 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (
+    !user ||
+    !isAdmin
+  ) {
     return (
       <section className="auth-screen">
         <div className="panel empty-state">
           <h1>
-            Admin access required.
+            Admin access
+            required.
           </h1>
 
           <p>
-            Login using an approved admin
-            email address.
+            Login using an
+            approved admin email
+            address.
           </p>
 
           <Link
@@ -501,14 +644,17 @@ export default function AdminPage() {
         </span>
 
         <h1>
-          Manage RailVision orders,
-          customers, applications, and
+          Manage RailVision
+          orders, customers,
+          applications, and
           affiliate commissions.
         </h1>
 
         <p>
-          Review payments, delivery status,
-          creator applications, and customer
+          Review payments,
+          delivery status,
+          creator applications,
+          and customer
           communications.
         </p>
       </section>
@@ -516,55 +662,103 @@ export default function AdminPage() {
       <section className="section analytics-grid">
         {[
           {
-            icon: BarChart3,
-            label: "Sales",
-            value: formatCurrency(revenue),
+            icon:
+              BarChart3,
+
+            label:
+              "Sales",
+
+            value:
+              formatCurrency(
+                revenue
+              ),
           },
+
           {
-            icon: Package,
-            label: "Orders",
-            value: String(orders.length),
+            icon:
+              Package,
+
+            label:
+              "Orders",
+
+            value:
+              String(
+                orders.length
+              ),
           },
+
           {
-            icon: UsersRound,
-            label: "Customers",
-            value: String(customers.length),
+            icon:
+              UsersRound,
+
+            label:
+              "Customers",
+
+            value:
+              String(
+                customers.length
+              ),
           },
+
           {
-            icon: Mail,
+            icon:
+              Mail,
+
             label:
               "Pending affiliate commission",
-            value: formatCurrency(
-              pendingAffiliateCommission
-            ),
+
+            value:
+              formatCurrency(
+                pendingAffiliateCommission
+              ),
           },
-        ].map((metric) => (
-          <div
-            className="stat-card"
-            key={metric.label}
-          >
-            <metric.icon size={28} />
+        ].map(
+          (
+            metric
+          ) => (
+            <div
+              className="stat-card"
+              key={
+                metric.label
+              }
+            >
+              <metric.icon
+                size={
+                  28
+                }
+              />
 
-            <span>{metric.value}</span>
+              <span>
+                {
+                  metric.value
+                }
+              </span>
 
-            <p>{metric.label}</p>
-          </div>
-        ))}
+              <p>
+                {
+                  metric.label
+                }
+              </p>
+            </div>
+          )
+        )}
       </section>
 
       <section className="section admin-tables">
         <OrderAdminList
-          orders={orders}
-          onStatusChange={
+          orders={
+            orders
+          }
+          onStatusChangeAction={
             changeOrderStatus
           }
-          onPaymentStatusChange={
+          onPaymentStatusChangeAction={
             changePaymentStatus
           }
-          onAffiliateStatusChange={
+          onAffiliateStatusChangeAction={
             changeAffiliateStatus
           }
-          onSelectOrder={
+          onSelectOrderAction={
             setSelectedOrder
           }
           updatingOrderStatusId={
@@ -595,13 +789,20 @@ export default function AdminPage() {
 
         <AdminRecordList
           title="Customers"
-          items={customers}
-          fields={["email", "name"]}
+          items={
+            customers
+          }
+          fields={[
+            "email",
+            "name",
+          ]}
         />
 
         <AdminRecordList
           title="RailVision Pro inquiries"
-          items={inquiries}
+          items={
+            inquiries
+          }
           fields={[
             "email",
             "company",
@@ -611,7 +812,9 @@ export default function AdminPage() {
 
         <AdminRecordList
           title="Contact messages"
-          items={contacts}
+          items={
+            contacts
+          }
           fields={[
             "email",
             "subject",
@@ -622,9 +825,13 @@ export default function AdminPage() {
 
       {selectedOrder ? (
         <OrderDetails
-          order={selectedOrder}
+          order={
+            selectedOrder
+          }
           onClose={() =>
-            setSelectedOrder(null)
+            setSelectedOrder(
+              null
+            )
           }
         />
       ) : null}
