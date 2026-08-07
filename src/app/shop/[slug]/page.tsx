@@ -89,27 +89,36 @@ export default function ProductPage() {
     );
   }
 
-  function addToCart() {
-    if (!user) {
-      toast.error(
-        "Please sign in to use your cart."
-      );
-
-      router.push(
-        `/auth?redirect=${encodeURIComponent(
-          `/shop/${product.slug}`
-        )}`
-      );
-
-      return;
-    }
-
-    cart.addItem(product);
-
-    toast.success(
-      `${product.name} added to cart.`
+function addToCart() {
+  if (!product) {
+    toast.error(
+      "Product not found."
     );
+
+    router.push("/shop");
+    return;
   }
+
+  if (!user) {
+    toast.error(
+      "Please sign in to use your cart."
+    );
+
+    router.push(
+      `/auth?redirect=${encodeURIComponent(
+        `/shop/${product.slug}`
+      )}`
+    );
+
+    return;
+  }
+
+  cart.addItem(product);
+
+  toast.success(
+    `${product.name} added to cart.`
+  );
+}
 
   const saving =
     product.originalPrice >
