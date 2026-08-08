@@ -7,12 +7,18 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://railvisionjr.netlify.app"),
+
   title: {
     default: "RailVision | AI Railway Safety and STEM Innovation",
     template: "%s | RailVision",
   },
+
   description:
     "RailVision builds AI-powered railway monitoring systems and STEM railway kits for the next generation of innovators.",
+
+  applicationName: "RailVision",
+
   keywords: [
     "RailVision",
     "railway safety",
@@ -22,11 +28,14 @@ export const metadata: Metadata = {
     "Razorpay",
     "Firebase",
   ],
+
   openGraph: {
     title: "RailVision",
+    siteName: "RailVision",
     description:
       "AI railway safety systems and STEM railway learning kits.",
     type: "website",
+    url: "https://railvisionjr.netlify.app",
   },
 };
 
@@ -40,7 +49,9 @@ export default function RootLayout({
       <body>
         <Providers>
           <Navbar />
-          <main>{children}</main>
+
+          {children}
+
           <Footer />
         </Providers>
 
